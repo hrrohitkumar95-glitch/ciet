@@ -186,7 +186,7 @@ export default function Gallery() {
               <ChevronRight size={14} />
               <span className="text-[#EEF3EA]/90">Gallery</span>
             </nav>
-            <h1 className="text-4xl font-bold leading-tight text-[#EEF3EA] sm:text-5xl">Gallery</h1>
+            <h1 className="text-4xl font-bold leading-tight text-[#EEF3EA] sm:text-5xl">Glimpse inside world of Golz Nutrition</h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#DBE6D5]/80">
               Explore healthy recipes, inspiring client transformations, workshops, seminars, and moments from our nutrition clinic.
             </p>
@@ -286,7 +286,7 @@ export default function Gallery() {
               Moments from GOLZ
             </span>
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">
-              A glimpse inside our clinic
+              Glimpse inside world of Golz Nutrition
             </h2>
             <p className="mx-auto mt-5 max-w-[600px] text-base leading-[1.8] text-muted sm:text-lg">
               From healthy cooking workshops and awareness seminars to real client transformations and everyday life at the clinic — a window into how science-backed nutrition comes alive.

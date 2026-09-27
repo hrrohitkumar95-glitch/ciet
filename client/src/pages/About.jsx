@@ -178,7 +178,7 @@ export default function About() {
       {/* ================= CREDENTIALS ================= */}
       <section className="section-pad">
         <div className="container-x">
-          <SectionHeading eyebrow="Credentials" title="Formally Trained, Practically Experienced" />
+          <SectionHeading eyebrow="Credentials" title="Professionally trained with practical expertise" subtitle="Nurturing Nutrition academically" />
           <div className="grid gap-5 sm:grid-cols-2">
             {(a.credentials || []).map((c, i) => (
               <Reveal key={c} delay={(i % 2) * 0.08}>
@@ -220,7 +220,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* ================= BEYOND THE CLINIC ================= */}
+{/* ================= BEYOND THE CLINIC ================= */}
       <section className="section-pad">
         <div className="container-x grid items-center gap-14 lg:grid-cols-2">
           <Reveal>
@@ -254,6 +254,73 @@ export default function About() {
               <p className="text-sm leading-relaxed text-ink/70">{a.vision}</p>
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ================= RESEARCH REVERSAL INNOVATION ================= */}
+      <section className="bg-section-sage section-pad">
+        <div className="container-x">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Reveal>
+              <div className="card flex items-start gap-4 p-6">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <Sparkles size={22} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-heading text-[19px] font-semibold text-ink">Research</h3>
+                  <p className="text-sm text-ink/70">{a.beyondClinic.split('.')[0]}</p>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="card flex items-start gap-4 p-6">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <Target size={22} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-heading text-[19px] font-semibold text-ink">Reversal of disease</h3>
+                  <p className="text-sm text-ink/70">Nutrition plans designed to support the management of diabetes, thyroid, PCOS and other lifestyle conditions through evidence-based dietary intervention.</p>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal>
+              <div className="card flex items-start gap-4 p-6">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <Award size={22} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-heading text-[19px] font-semibold text-ink">Innovation</h3>
+                  <p className="text-sm text-ink/70">UGC-approved nutrition programs and 250+ invited talks shaping nutrition education across India.</p>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= OUR JOURNEY ================= */}
+      <section className="section-pad bg-section-sage">
+        <div className="container-x">
+          <SectionHeading
+            eyebrow="Our Journey"
+            title="Precious moments"
+            subtitle=""
+          />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {(a.timeline || []).map((t, i) => (
+              <Reveal key={t.year} delay={(i % 3) * 0.08}>
+                <div className="card flex items-start gap-4 p-6">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                    <Eye size={22} />
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="font-heading text-[19px] font-semibold text-ink">{t.year}</h3>
+                    <p className="text-sm text-ink/70">{t.title}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
