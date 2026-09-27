@@ -42,6 +42,10 @@ export default function Gallery() {
       setItems((prev) => (pg === 1 ? data.items : [...prev, ...data.items]));
       setPages(data.pages);
       setTotal(data.total);
+    } catch {
+      setItems([]);
+      setPages(1);
+      setTotal(0);
     } finally {
       setLoading(false);
     }

@@ -20,8 +20,12 @@ export default function Blog() {
     const params = { page: pg, limit: 6 };
     if (q) params.search = q;
     if (cat && cat !== "All") params.category = cat;
-    const { data: res } = await api.get("/public/blogs", { params });
-    setData(res);
+    try {
+      const { data: res } = await api.get("/public/blogs", { params });
+      setData(res);
+    } catch {
+      setData({ items: [], total: 0, pages: 0, categories: [], tags: [] });
+    }
   }, []);
 
   useEffect(() => {

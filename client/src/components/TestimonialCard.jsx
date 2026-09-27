@@ -50,7 +50,7 @@ function TestimonialCard({ item }) {
 
       <footer className="mt-6 flex items-center gap-4 border-t border-gray-100 pt-6">
         {photo ? (
-          <img
+          <ImgFallback
             src={photo}
             alt={name}
             loading="lazy"

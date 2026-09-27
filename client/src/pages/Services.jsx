@@ -45,7 +45,7 @@ export default function Services() {
       api.get("/public/services").then(({ data }) => {
         setServices(data);
         setActive(null);
-      });
+      }).catch(() => setServices([]));
       setNotFound(false);
     }
   }, [slug]);

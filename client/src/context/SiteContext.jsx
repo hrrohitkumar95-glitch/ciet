@@ -14,10 +14,9 @@ export function SiteProvider({ children }) {
     try {
       const { data } = await api.get("/public/site");
       setSite({ ...site, ...data });
-    } catch {
-      // keep defaults on failure
-    } finally {
       setLoading(false);
+    } catch {
+      // keep loading true; keep defaults so UI knows data isn't ready
     }
   }, []);
 
