@@ -213,7 +213,7 @@ export default function Home() {
             <div className="mx-auto mt-9 grid max-w-[620px] grid-cols-3 divide-x divide-white/10 rounded-[18px] border border-white/15 bg-white/5 py-6 lg:mx-0">
               {[
                 { value: site.about?.experienceYears || 19, suffix: "+", label: "Years of Experience" },
-                { value: site.about?.specialNeeds?.stat?.value || 3000, suffix: site.about?.specialNeeds?.stat?.suffix || "+", label: "Diet Plans Crafted" },
+                { value: site.about?.specialNeeds?.stat?.value || 5000, suffix: "+", label: "Diet Plans" },
                 { value: 500, suffix: "+", label: "Happy Clients" },
               ].map((s) => (
                 <div key={s.label} className="px-2 text-center sm:px-4">
