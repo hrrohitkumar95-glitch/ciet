@@ -9,23 +9,29 @@ export function SiteProvider({ children }) {
     services: [], testimonials: [], gallery: [], blogs: [], galleryCategories: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const refresh = useCallback(async () => {
+    setError(false);
     try {
       const { data } = await api.get("/public/site");
-      setSite({ ...site, ...data });
-      setLoading(false);
+      setSite((prev) => ({ ...prev, ...data }));
+      return true;
     } catch {
-      // keep loading true; keep defaults so UI knows data isn't ready
+      // Site data is optional: pages must still render from defaults.
+      setError(true);
+      return false;
+    } finally {
+      // Always settle, so a failed request can never leave a permanent spinner.
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
-  return <SiteContext.Provider value={{ site, loading, refresh }}>{children}</SiteContext.Provider>;
+  return <SiteContext.Provider value={{ site, loading, error, refresh }}>{children}</SiteContext.Provider>;
 }
 
 export function useSite() {

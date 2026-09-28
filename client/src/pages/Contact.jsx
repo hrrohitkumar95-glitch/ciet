@@ -58,7 +58,7 @@ export default function Contact() {
               { Icon: MessageCircle, title: "WhatsApp", lines: ["Chat with us instantly"] },
             ].map(({ Icon, title, lines }, i) => (
               <motion.div key={title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="card p-6 text-center">
-                <span className="mx-auto mb-4 flex h-13 w-13 items-center justify-center rounded-2xl bg-primary/10 p-3.5 text-primary"><Icon size={24} /></span>
+                <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 p-3.5 text-primary"><Icon size={24} /></span>
                 <h3 className="mb-1.5 font-heading font-semibold text-charcoal">{title}</h3>
                 {lines.map((l) => <p key={l} className="text-sm text-charcoal/60">{l}</p>)}
               </motion.div>

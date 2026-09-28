@@ -1,6 +1,16 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: "/api", withCredentials: true });
+/**
+ * A request must never stay pending forever: without a timeout a hung endpoint
+ * leaves the caller stuck in its loading state with no way to recover.
+ */
+export const API_TIMEOUT = 15000;
+
+const api = axios.create({
+  baseURL: "/api",
+  withCredentials: true,
+  timeout: API_TIMEOUT,
+});
 
 api.interceptors.response.use(
   (res) => res,

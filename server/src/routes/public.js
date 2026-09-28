@@ -26,8 +26,16 @@ async function getSetting(key, fallback = {}) {
   return doc ? doc.value : fallback;
 }
 
+/**
+ * Express 4 does not catch rejected promises from async handlers, so a failed
+ * database query leaves the request hanging until the platform times out. Every
+ * async route is wrapped so failures reach the error middleware as a 500
+ * instead of an endless request.
+ */
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
 /** Aggregated payload for fast frontend page loads */
-router.get("/site", async (_req, res) => {
+router.get("/site", asyncHandler(async (_req, res) => {
   try {
     const [general, homepage, about, seo, services, testimonials, gallery, blogs, categories] = await Promise.all([
       getSetting("general"),
@@ -44,20 +52,20 @@ router.get("/site", async (_req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-});
+}));
 
-router.get("/services", async (_req, res) => {
+router.get("/services", asyncHandler(async (_req, res) => {
   const items = await Service.find({ published: true }).sort({ order: 1, createdAt: 1 });
   res.json(items);
-});
+}));
 
-router.get("/services/:slug", async (req, res) => {
+router.get("/services/:slug", asyncHandler(async (req, res) => {
   const item = await Service.findOne({ slug: req.params.slug, published: true });
   if (!item) return res.status(404).json({ message: "Service not found" });
   res.json(item);
-});
+}));
 
-router.get("/gallery", async (req, res) => {
+router.get("/gallery", asyncHandler(async (req, res) => {
   const { category, page = 1, limit = 12 } = req.query;
   const filter = { published: true };
   if (category && category !== "All") filter.category = category;
@@ -66,13 +74,13 @@ router.get("/gallery", async (req, res) => {
     GalleryItem.countDocuments(filter),
   ]);
   res.json({ items, total, page: Number(page), pages: Math.ceil(total / limit) });
-});
+}));
 
-router.get("/gallery/categories", async (_req, res) => {
+router.get("/gallery/categories", asyncHandler(async (_req, res) => {
   res.json(await GalleryItem.distinct("category", { published: true }));
-});
+}));
 
-router.get("/gallery/sections", async (_req, res) => {
+router.get("/gallery/sections", asyncHandler(async (_req, res) => {
   let sections = await GallerySection.find().sort({ order: 1, createdAt: 1 });
   if (sections.length === 0) {
     const cats = await GalleryItem.distinct("category", { published: true });
@@ -87,9 +95,9 @@ router.get("/gallery/sections", async (_req, res) => {
   ]);
   const map = Object.fromEntries(counts.map((c) => [c._id, c.n]));
   res.json(sections.map((s) => ({ ...s.toObject(), count: map[s.name] || 0 })));
-});
+}));
 
-router.get("/blogs", async (req, res) => {
+router.get("/blogs", asyncHandler(async (req, res) => {
   const { search, category, tag, page = 1, limit = 6, sort = "latest" } = req.query;
   const filter = { published: true };
   if (search) filter.$or = [
@@ -107,17 +115,17 @@ router.get("/blogs", async (req, res) => {
     Blog.distinct("tags", { published: true }),
   ]);
   res.json({ items, total, page: Number(page), pages: Math.ceil(total / limit), categories, tags });
-});
+}));
 
-router.get("/blogs/:slug", async (req, res) => {
+router.get("/blogs/:slug", asyncHandler(async (req, res) => {
   const blog = await Blog.findOne({ slug: req.params.slug, published: true });
   if (!blog) return res.status(404).json({ message: "Blog not found" });
   blog.views += 1;
   await blog.save();
   res.json(blog);
-});
+}));
 
-router.get("/blogs/:slug/related", async (req, res) => {
+router.get("/blogs/:slug/related", asyncHandler(async (req, res) => {
   const blog = await Blog.findOne({ slug: req.params.slug, published: true });
   if (!blog) return res.json([]);
   let related = await Blog.find({
@@ -131,12 +139,12 @@ router.get("/blogs/:slug/related", async (req, res) => {
     related = await Blog.find({ _id: { $ne: blog._id }, published: true }).sort({ publishedAt: -1 }).limit(3);
   }
   res.json(related);
-});
+}));
 
-router.get("/testimonials", async (_req, res) => {
+router.get("/testimonials", asyncHandler(async (_req, res) => {
   const items = await Testimonial.find({ published: true }).sort({ featured: -1, createdAt: -1 }).limit(20);
   res.json(items);
-});
+}));
 
 router.post("/visit", trackVisit);
 

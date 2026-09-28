@@ -11,6 +11,7 @@ import LazyImage from "../components/LazyImage";
 import ImgFallback from "../components/ImgFallback";
 import Counter from "../components/Counter";
 import { useSite } from "../context/SiteContext";
+import { toGalleryItems, withSectionLabels, titleOf } from "../data/galleryItems";
 
 const PAGE_SIZE = 12;
 
@@ -39,7 +40,8 @@ export default function Gallery() {
     setLoading(true);
     try {
       const { data } = await api.get("/public/gallery", { params: { category: cat, page: pg, limit: lim } });
-      setItems((prev) => (pg === 1 ? data.items : [...prev, ...data.items]));
+      const next = toGalleryItems(data.items);
+      setItems((prev) => (pg === 1 ? next : [...prev, ...next]));
       setPages(data.pages);
       setTotal(data.total);
     } catch {
@@ -52,8 +54,10 @@ export default function Gallery() {
   }, []);
 
   useEffect(() => {
-    api.get("/public/gallery/sections").then(({ data }) => setSections(data));
-    api.get("/public/gallery/categories").then(({ data }) => setCategories(["All", ...data]));
+    // Section/category metadata is optional: the grid still renders from items
+    // alone, so a failure here must not reject or blank the page.
+    api.get("/public/gallery/sections").then(({ data }) => setSections(data || [])).catch(() => setSections([]));
+    api.get("/public/gallery/categories").then(({ data }) => setCategories(["All", ...(data || [])])).catch(() => setCategories(["All"]));
   }, []);
 
   useEffect(() => {
@@ -76,21 +80,22 @@ export default function Gallery() {
   const grouped = useMemo(() => {
     const map = new Map();
     for (const it of items) {
-      if (!map.has(it.category)) map.set(it.category, []);
-      map.get(it.category).push(it);
+      if (!map.has(it.section)) map.set(it.section, []);
+      map.get(it.section).push(it);
     }
     const hidden = new Set(sections.filter((s) => s.published === false).map((s) => s.name));
     const order = sections.filter((s) => s.published !== false).map((s) => s.name);
     const extras = [...map.keys()].filter((c) => !hidden.has(c) && !order.includes(c));
-    return [...order, ...extras].map((name) => [name, map.get(name) || []]);
-  }, [items, sections]);
+    return [...order, ...extras].map((name) => [name, withSectionLabels(map.get(name) || [], sectionByName[name])]);
+  }, [items, sections, sectionByName]);
 
   const open = useCallback(async (cat, index = 0) => {
     try {
       const { data } = await api.get("/public/gallery", { params: { category: cat, limit: 1000 } });
       if (!data.items.length) return;
       const section = secInfo(cat, data.items);
-      setLightbox({ items: data.items.map((it) => ({ ...it, section })), index: Math.min(index, Math.max(data.items.length - 1, 0)) });
+      const list = withSectionLabels(toGalleryItems(data.items), section);
+      setLightbox({ items: list, index: Math.min(index, Math.max(list.length - 1, 0)) });
     } catch { /* noop */ }
   }, [secInfo]);
   const navigate = useCallback((index) => setLightbox((lb) => (lb ? { ...lb, index } : lb)), []);
@@ -100,42 +105,43 @@ export default function Gallery() {
       <AnimatePresence>
         {list.map((item, i) => (
           <motion.button
-            key={item._id}
+            key={item.id}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.4, delay: (i % 6) * 0.05, ease: [0.21, 0.65, 0.36, 1] }}
             onClick={() => onOpen(i)}
-            className="group relative mb-6 w-full cursor-pointer overflow-hidden rounded-[20px] break-inside-avoid bg-white text-left shadow-soft transition-shadow duration-300 hover:shadow-lift focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
-            aria-label={`Open ${item.type === "video" ? "video" : "image"}: ${item.caption || item.alt || item.category}`}
+            className="group relative mb-6 block w-full cursor-pointer overflow-hidden rounded-[20px] break-inside-avoid bg-white text-left shadow-soft transition-shadow duration-300 hover:shadow-lift focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+            aria-label={`Open image: ${titleOf(item)}`}
           >
             <div className="relative overflow-hidden">
               {item.type === "video" ? (
                 <>
-                  <video src={item.url} muted className="aspect-[4/3] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
+                  <video src={item.image} muted className="aspect-[4/3] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
                   <PlayBadge />
                 </>
               ) : (
                 <LazyImage
-                  src={item.url}
-                  alt={item.alt || item.caption || "Gallery image"}
+                  src={item.image}
+                  alt={item.alt || titleOf(item)}
                   natural
                   className="w-full"
                   imgClassName="transition-transform duration-700 ease-out group-hover:scale-110"
                 />
               )}
 
-              <span className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/15 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-card backdrop-blur">
-                {item.category}
-              </span>
-
-              <span className="absolute inset-x-0 bottom-0 translate-y-3 p-5 text-white opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100">
-                <span className="block font-heading text-lg font-semibold leading-snug">{item.caption || item.alt || "GOLZ moment"}</span>
-                <span className="mt-1 block text-xs font-medium text-white/70">GOLZ · {item.category}</span>
-              </span>
+              {item.year && (
+                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-card backdrop-blur">
+                  {item.year}
+                </span>
+              )}
             </div>
+
+            <span className="block px-4 py-3.5">
+              <span className="block font-heading text-[15px] font-semibold leading-snug text-ink transition-colors group-hover:text-primary line-clamp-2">
+                {titleOf(item)}
+              </span>
+            </span>
           </motion.button>
         ))}
       </AnimatePresence>
@@ -260,7 +266,7 @@ export default function Gallery() {
           ) : (
             <div>
               {sectionHeader(secInfo(category, items), () => open(category, 0), { showPill: false })}
-              {renderGrid(items, (i) => open(category, i))}
+              {renderGrid(withSectionLabels(items, sectionByName[category]), (i) => open(category, i))}
             </div>
           )}
 

@@ -51,6 +51,9 @@ const HELP_ICONS = [Sparkles, HeartPulse, Baby];
 export default function About() {
   const { site } = useSite();
   const a = site.about || {};
+  // Never render "undefined" on screen, and never crash when optional CMS text is absent.
+  const founderLine = [a.name || "Dr. Sushma Appaiah", a.designation].filter(Boolean).join(" — ");
+  const researchLine = (a.beyondClinic || "").split(".")[0].trim();
   const seo = site.seo || {};
   const sn = a.specialNeeds || {};
 
@@ -71,7 +74,7 @@ export default function About() {
       />
       <PageHero
         title={a.heroTitle || "About Dr. Sushma Appaiah"}
-        subtitle={`${a.name} — ${a.designation}`}
+        subtitle={founderLine}
         breadcrumb={["About"]}
         image={a.image}
       />
@@ -268,7 +271,7 @@ export default function About() {
                 </span>
                 <div className="flex-1">
                   <h3 className="font-heading text-[19px] font-semibold text-ink">Research</h3>
-                  <p className="text-sm text-ink/70">{a.beyondClinic.split('.')[0]}</p>
+                  <p className="text-sm text-ink/70">{researchLine}</p>
                 </div>
               </div>
             </Reveal>

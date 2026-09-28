@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Search, TrendingUp, Clock, ArrowRight, X } from "lucide-react";
 import api from "../api/client";
 import SEO from "../components/SEO";
@@ -33,7 +34,9 @@ export default function Blog() {
   }, [load, searchInput, category, page]);
 
   useEffect(() => {
-    api.get("/public/blogs", { params: { sort: "popular", limit: 4 } }).then(({ data }) => setPopular(data.items));
+    api.get("/public/blogs", { params: { sort: "popular", limit: 4 } })
+      .then(({ data }) => setPopular(data.items || []))
+      .catch(() => setPopular([]));
   }, []);
 
   useEffect(() => {
@@ -119,13 +122,13 @@ export default function Blog() {
                 <ul className="space-y-5">
                   {popular.map((b) => (
                     <li key={b._id}>
-                      <a href={`/blog/${b.slug}`} className="group flex gap-3">
+                      <Link to={`/blogs/${b.slug}`} className="group flex gap-3">
                         <img src={b.cover} alt="" className="h-16 w-20 shrink-0 rounded-xl object-cover" loading="lazy" />
                         <div>
                           <p className="line-clamp-2 text-sm font-medium leading-snug text-charcoal transition group-hover:text-primary">{b.title}</p>
                           <p className="mt-1.5 flex items-center gap-1.5 text-xs text-charcoal/45"><Clock size={11} /> {formatDate(b.publishedAt || b.createdAt)}</p>
                         </div>
-                      </a>
+          </Link>
                     </li>
                   ))}
                 </ul>
@@ -133,9 +136,9 @@ export default function Blog() {
               <div className="rounded-3xl bg-gradient-to-br from-primary to-primary-dark p-7 text-white shadow-lift">
                 <h2 className="mb-2 font-heading text-xl font-bold">Ready for a change?</h2>
                 <p className="mb-5 text-sm text-white/80">Get a personalised plan built around your goals.</p>
-                <a href="/contact" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-heading text-sm font-semibold text-primary transition hover:bg-sage">
+                <Link to="/contact" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-heading text-sm font-semibold text-primary transition hover:bg-sage">
                   Book Consultation <ArrowRight size={15} />
-                </a>
+                </Link>
               </div>
             </aside>
           </div>

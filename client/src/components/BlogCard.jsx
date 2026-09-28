@@ -6,7 +6,7 @@ import { formatDate, truncate, stripHtml } from "../utils/helpers";
 export default function BlogCard({ blog, index = 0 }) {
   return (
     <Link
-      to={`/blog/${blog.slug}`}
+      to={`/blogs/${blog.slug}`}
       className="card group flex h-full flex-col overflow-hidden hover:-translate-y-2 hover:shadow-lift"
     >
       <div className="relative h-52 overflow-hidden">

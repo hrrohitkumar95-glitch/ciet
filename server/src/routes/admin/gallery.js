@@ -11,7 +11,7 @@ const router = express.Router();
 
 const validId = (id) => mongoose.Types.ObjectId.isValid(id);
 
-const ITEM_FIELDS = ["type", "url", "thumb", "caption", "description", "alt", "order", "featured", "published"];
+const ITEM_FIELDS = ["type", "url", "thumb", "year", "eventName", "caption", "description", "alt", "order", "featured", "published"];
 
 /** Best-effort removal of the media record + stored file for one gallery item's URL. */
 async function removeItemMedia(url, thumb) {

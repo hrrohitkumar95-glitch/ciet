@@ -313,6 +313,14 @@ export default function GalleryAdmin() {
                     {sections.length ? sections.map((s) => <option key={s._id} value={s.name}>{s.title || s.name}</option>) : <option>{editing.category}</option>}
                   </select>
                 </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Year" hint="Shown as secondary info">
+                    <input className="input" value={editing.year || ""} onChange={(e) => setEditing({ ...editing, year: e.target.value })} placeholder="e.g. 2020" />
+                  </Field>
+                  <Field label="Event name" hint="Main heading for this photo">
+                    <input className="input" value={editing.eventName || ""} onChange={(e) => setEditing({ ...editing, eventName: e.target.value })} placeholder="e.g. Annual Cultural Fest" />
+                  </Field>
+                </div>
                 <div className="flex gap-6">
                   <label className="flex items-center gap-2.5 text-sm font-medium text-charcoal/75">
                     <Toggle checked={editing.published} onChange={(published) => setEditing({ ...editing, published })} label="Published" /> Published
@@ -323,8 +331,8 @@ export default function GalleryAdmin() {
                 </div>
               </div>
             </div>
-            <Field label="Caption" hint="Shown as the image name when it opens">
-              <input className="input" value={editing.caption} onChange={(e) => setEditing({ ...editing, caption: e.target.value })} />
+            <Field label="Caption" hint="Shown under the event name in the lightbox. Leave blank if the event name already says it.">
+              <textarea className="input resize-none" rows={2} value={editing.caption || ""} onChange={(e) => setEditing({ ...editing, caption: e.target.value })} placeholder="Describe this specific photo…" />
             </Field>
             <Field label="Description" hint="Shown under the name when the image opens">
               <textarea className="input resize-none" rows={3} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Describe this photo or video…" />

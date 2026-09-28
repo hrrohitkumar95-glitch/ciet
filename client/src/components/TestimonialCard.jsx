@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import { Quote, Star, CheckCircle2 } from "lucide-react";
+import ImgFallback from "./ImgFallback";
 
 function TestimonialCard({ item }) {
   const { name = "", role = "", rating = 5, result = "", text = "", photo = "" } = item;

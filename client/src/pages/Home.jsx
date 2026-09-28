@@ -12,6 +12,7 @@ import Reveal from "../components/Reveal";
 import SectionHeading from "../components/SectionHeading";
 import BookingSection from "../components/BookingSection";
 import Lightbox, { PlayBadge } from "../components/Lightbox";
+import { toGalleryItem, withSectionLabel } from "../data/galleryItems";
 import { ICON_MAP } from "../utils/helpers";
 
 const TestimonialsSection = lazy(() => import("../components/TestimonialsSection"));
@@ -70,7 +71,10 @@ export default function Home() {
   }, []);
 
   const sectionByName = useMemo(() => Object.fromEntries(gallerySections.map((s) => [s.name, s])), [gallerySections]);
-  const withSection = useCallback((g) => ({ ...g, section: sectionByName[g.category] || { name: g.category, title: g.category } }), [sectionByName]);
+  const withSection = useCallback(
+    (g, i) => withSectionLabel(toGalleryItem(g, i), sectionByName[g.category] || { name: g.category, title: g.category }),
+    [sectionByName]
+  );
 
   return (
     <>

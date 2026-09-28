@@ -9,7 +9,7 @@ const NAV = [
   { label: "About", to: "/about" },
   { label: "Services", to: "/services" },
   { label: "Gallery", to: "/gallery" },
-  { label: "Blog", to: "/blog" },
+  { label: "Blogs", to: "/blogs" },
 ];
 
 export default function Header() {

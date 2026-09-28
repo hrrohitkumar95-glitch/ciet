@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import PageLoader from "./components/PageLoader";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { loadIconMap } from "./utils/helpers";
 import { useSite } from "./context/SiteContext";
 
@@ -92,21 +93,30 @@ export default function App() {
     <>
       <ScrollToTop />
       <Header />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageFade><Home /></PageFade>} />
-          <Route path="/about" element={<PageFade><About /></PageFade>} />
-          <Route path="/services" element={<PageFade><Services /></PageFade>} />
-          <Route path="/services/:slug" element={<PageFade><Services /></PageFade>} />
-          <Route path="/gallery" element={<PageFade><Gallery /></PageFade>} />
-          <Route path="/blog" element={<PageFade><Blog /></PageFade>} />
-          <Route path="/blog/:slug" element={<PageFade><BlogPost /></PageFade>} />
-          <Route path="/contact" element={<PageFade><Contact /></PageFade>} />
-          <Route path="/privacy-policy" element={<PageFade><Legal type="privacy" /></PageFade>} />
-          <Route path="/terms" element={<PageFade><Legal type="terms" /></PageFade>} />
-          <Route path="*" element={<PageFade><NotFound /></PageFade>} />
-        </Routes>
-      </AnimatePresence>
+      {/* Every public page is lazy-loaded, so they all need a Suspense boundary.
+          Without this, client-side navigation to an unloaded route white-screens. */}
+      <ErrorBoundary onRetry={() => window.location.reload()}>
+        <Suspense fallback={<PageLoader label="Loading page…" />}>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<PageFade><Home /></PageFade>} />
+              <Route path="/about" element={<PageFade><About /></PageFade>} />
+              <Route path="/services" element={<PageFade><Services /></PageFade>} />
+              <Route path="/services/:slug" element={<PageFade><Services /></PageFade>} />
+              <Route path="/gallery" element={<PageFade><Gallery /></PageFade>} />
+              <Route path="/blog" element={<PageFade><Blog /></PageFade>} />
+              <Route path="/blog/:slug" element={<PageFade><BlogPost /></PageFade>} />
+              {/* /blogs is the advertised public path; both forms resolve. */}
+              <Route path="/blogs" element={<PageFade><Blog /></PageFade>} />
+              <Route path="/blogs/:slug" element={<PageFade><BlogPost /></PageFade>} />
+              <Route path="/contact" element={<PageFade><Contact /></PageFade>} />
+              <Route path="/privacy-policy" element={<PageFade><Legal type="privacy" /></PageFade>} />
+              <Route path="/terms" element={<PageFade><Legal type="terms" /></PageFade>} />
+              <Route path="*" element={<PageFade><NotFound /></PageFade>} />
+            </Routes>
+          </AnimatePresence>
+        </Suspense>
+      </ErrorBoundary>
       <Footer />
       <FloatingWhatsAppButton />
     </>

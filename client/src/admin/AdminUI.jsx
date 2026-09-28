@@ -198,7 +198,7 @@ export function SortableList({ items, onReorder, renderItem, getKey }) {
 export function StatCard({ label, value, icon: Icon, color = "bg-primary/10 text-primary" }) {
   return (
     <div className="card flex items-center gap-4 p-6">
-      <span className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl p-3.5 ${color}`}>
+      <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl p-3.5 ${color}`}>
         {Icon && <Icon size={24} />}
       </span>
       <div>

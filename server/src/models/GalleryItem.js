@@ -7,6 +7,8 @@ const schema = new mongoose.Schema(
     thumb: { type: String, default: "" },
     category: { type: String, default: "General" },
     gallerySectionId: { type: mongoose.Schema.Types.ObjectId, ref: "GallerySection", default: null, index: true },
+    year: { type: String, default: "", trim: true },
+    eventName: { type: String, default: "", trim: true },
     caption: { type: String, default: "" },
     description: { type: String, default: "" },
     alt: { type: String, default: "" },

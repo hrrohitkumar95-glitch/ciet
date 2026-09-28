@@ -22,7 +22,7 @@ export default function BlogPost() {
     setError(false);
     api.get(`/public/blogs/${slug}`).then(({ data }) => {
       setBlog(data);
-      api.get(`/public/blogs/${slug}/related`).then(({ data: r }) => setRelated(r));
+      api.get(`/public/blogs/${slug}/related`).then(({ data: r }) => setRelated(r || [])).catch(() => setRelated([]));
     }).catch(() => setError(true));
     window.scrollTo({ top: 0 });
   }, [slug]);
@@ -31,7 +31,7 @@ export default function BlogPost() {
     return (
       <div className="container-x py-48 text-center">
         <h1 className="text-3xl font-bold text-charcoal">Article not found</h1>
-        <Link to="/blog" className="btn-primary mt-8"><ArrowLeft size={17} /> Back to Blog</Link>
+        <Link to="/blogs" className="btn-primary mt-8"><ArrowLeft size={17} /> Back to Blog</Link>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function BlogPost() {
           <div className="absolute inset-0 bg-gradient-to-b from-charcoal/70 to-charcoal" />
         </div>
         <div className="container-x relative z-10 max-w-4xl">
-          <Link to="/blog" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-sage">
+          <Link to="/blogs" className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-sage">
             <ArrowLeft size={16} /> Back to Blog
           </Link>
           <span className="mb-4 inline-block rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white">{blog.category}</span>
