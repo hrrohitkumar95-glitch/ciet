@@ -11,3 +11,8 @@ client/.env
 public/banner
 public/*.png
 .env*
+
+# Raw historical photo archive (public/<year>/...) — source material only, ~174 MB
+# of 4608x3456 originals. Never commit these: server/scripts/optimise-archive-images.mjs
+# resizes them and import-archive-gallery.mjs uploads the optimised copies to Vercel Blob.
+public/[0-9][0-9][0-9][0-9]/
