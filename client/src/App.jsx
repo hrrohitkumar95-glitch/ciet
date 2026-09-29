@@ -14,6 +14,7 @@ import { useSite } from "./context/SiteContext";
 const Home = lazy(() => import("./pages/Home"));
 const About = lazy(() => import("./pages/About"));
 const Services = lazy(() => import("./pages/Services"));
+const ServiceDetail = lazy(() => import("./pages/ServiceDetail"));
 const Gallery = lazy(() => import("./pages/Gallery"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
@@ -102,7 +103,7 @@ export default function App() {
               <Route path="/" element={<PageFade><Home /></PageFade>} />
               <Route path="/about" element={<PageFade><About /></PageFade>} />
               <Route path="/services" element={<PageFade><Services /></PageFade>} />
-              <Route path="/services/:slug" element={<PageFade><Services /></PageFade>} />
+              <Route path="/services/:slug" element={<PageFade><ServiceDetail /></PageFade>} />
               <Route path="/gallery" element={<PageFade><Gallery /></PageFade>} />
               <Route path="/blog" element={<PageFade><Blog /></PageFade>} />
               <Route path="/blog/:slug" element={<PageFade><BlogPost /></PageFade>} />
