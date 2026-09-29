@@ -181,7 +181,7 @@ export default function Contact() {
 
           <p className="mt-10 text-center text-sm text-charcoal/50">
             Not sure which program fits?{" "}
-            <Link to="/services" className="font-semibold text-primary underline underline-offset-2">Browse our programs</Link>
+            <Link to="/contact" className="font-semibold text-primary underline underline-offset-2">Talk to our nutritionist</Link>
           </p>
         </div>
       </section>

@@ -45,8 +45,7 @@ export default function Footer() {
           <h3 className="mb-5 font-heading text-base font-semibold text-[#EEF3EA]">Quick Links</h3>
           <ul className="space-y-2.5 text-sm">
             {[
-              ["Home", "/"], ["About Us", "/about"], ["Services", "/services"],
-              ["Gallery", "/gallery"], ["Blog", "/blog"], ["Book Consultation", "/contact"],
+              ["Home", "/"], ["Book Consultation", "/contact"],
             ].map(([label, to]) => (
               <li key={to}>
                 <Link to={to} className="inline-flex items-center gap-1.5 transition hover:text-lime">

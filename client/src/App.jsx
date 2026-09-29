@@ -12,11 +12,6 @@ import { loadIconMap } from "./utils/helpers";
 import { useSite } from "./context/SiteContext";
 
 const Home = lazy(() => import("./pages/Home"));
-const About = lazy(() => import("./pages/About"));
-const Services = lazy(() => import("./pages/Services"));
-const Gallery = lazy(() => import("./pages/Gallery"));
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Legal = lazy(() => import("./pages/Legal"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -100,15 +95,6 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<PageFade><Home /></PageFade>} />
-              <Route path="/about" element={<PageFade><About /></PageFade>} />
-              <Route path="/services" element={<PageFade><Services /></PageFade>} />
-              <Route path="/services/:slug" element={<PageFade><Services /></PageFade>} />
-              <Route path="/gallery" element={<PageFade><Gallery /></PageFade>} />
-              <Route path="/blog" element={<PageFade><Blog /></PageFade>} />
-              <Route path="/blog/:slug" element={<PageFade><BlogPost /></PageFade>} />
-              {/* /blogs is the advertised public path; both forms resolve. */}
-              <Route path="/blogs" element={<PageFade><Blog /></PageFade>} />
-              <Route path="/blogs/:slug" element={<PageFade><BlogPost /></PageFade>} />
               <Route path="/contact" element={<PageFade><Contact /></PageFade>} />
               <Route path="/privacy-policy" element={<PageFade><Legal type="privacy" /></PageFade>} />
               <Route path="/terms" element={<PageFade><Legal type="terms" /></PageFade>} />
