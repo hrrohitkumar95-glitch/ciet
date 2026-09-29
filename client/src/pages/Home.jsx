@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, CalendarCheck, Star, ArrowUpRight, BadgeCheck,
+  ArrowRight, CalendarCheck, Star, ArrowUpRight, BadgeCheck, Camera,
   Leaf, GraduationCap, Sparkles,
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
@@ -231,7 +231,7 @@ export default function Home() {
 
             <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
               <Link
-                to="/contact"
+                to={h.aboutPreview?.buttonLink || "/about"}
                 className="btn-gold w-full !bg-lime !text-ink hover:!bg-limeDark sm:w-auto sm:min-w-[200px]"
               >
                 {h.aboutPreview?.buttonLabel || "Know More"} <ArrowRight size={18} />
@@ -296,7 +296,7 @@ export default function Home() {
               return (
                 <Reveal key={s._id} delay={(i % 3) * 0.08} className="h-full">
                   <Link
-                    to={`/contact?service=${encodeURIComponent(s.title)}`}
+                    to={`/services/${s.slug}`}
                     className="group flex h-full min-h-[240px] flex-col rounded-[24px] border border-[#ECECEC] bg-white p-7 transition-all duration-300 ease-out hover:-translate-y-2 hover:border-transparent hover:shadow-lift sm:p-8"
                   >
                     <span className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5 text-primary transition-transform duration-300 ease-out group-hover:scale-110">
@@ -401,6 +401,9 @@ export default function Home() {
               </Reveal>
             ))}
           </div>
+          <Reveal className="mt-10 text-center">
+            <Link to="/gallery" className="btn-primary"><Camera size={18} /> View Gallery</Link>
+          </Reveal>
         </div>
       </section>
 

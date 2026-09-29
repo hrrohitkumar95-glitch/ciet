@@ -6,6 +6,10 @@ import { useSite } from "../context/SiteContext";
 
 const NAV = [
   { label: "Home", to: "/" },
+  { label: "About", to: "/about" },
+  { label: "Services", to: "/services" },
+  { label: "Gallery", to: "/gallery" },
+  { label: "Blogs", to: "/blogs" },
 ];
 
 export default function Header() {
