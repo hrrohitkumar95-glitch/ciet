@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 
 import { connectDB } from "./config/db.js";
 import { requireAuth, requireAdmin } from "./middleware/auth.js";
+import { dbGate } from "./middleware/dbGate.js";
 import { upload, UPLOAD_DIR } from "./middleware/upload.js";
 import { seedIfEmpty } from "./seed.js";
 
@@ -31,6 +32,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.set("trust proxy", 1);
+// Must be registered before any route: on Vercel the function is cold, and a
+// gate mounted later would sit behind handlers that already query the database.
+// Scoped to /api on purpose: a database outage should degrade data endpoints
+// (which the client handles with its snapshot + retry) without also taking the
+// app shell down with a 503.
+app.use("/api", dbGate());
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:5173", credentials: true }));
 // On Vercel the body is already parsed for JSON payloads — skip re-parsing.
@@ -100,19 +107,24 @@ app.get("/sitemap.xml", async (_req, res) => {
 });
 
 // ---------- Scheduled blog publishing ----------
-cron.schedule("* * * * *", async () => {
-  try {
-    const due = await Blog.find({ published: false, scheduledAt: { $ne: null, $lte: new Date() } });
-    for (const b of due) {
-      b.published = true;
-      b.publishedAt = b.publishedAt || new Date();
-      await b.save();
-      console.log(`[cron] published scheduled blog: ${b.title}`);
+// Serverless instances are short-lived and multiply per region, so a timer here
+// would never fire reliably and would keep every instance warm. Only run it on
+// a long-lived Node process.
+if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  cron.schedule("* * * * *", async () => {
+    try {
+      const due = await Blog.find({ published: false, scheduledAt: { $ne: null, $lte: new Date() } });
+      for (const b of due) {
+        b.published = true;
+        b.publishedAt = b.publishedAt || new Date();
+        await b.save();
+        console.log(`[cron] published scheduled blog: ${b.title}`);
+      }
+    } catch (err) {
+      console.error("[cron] error:", err.message);
     }
-  } catch (err) {
-    console.error("[cron] error:", err.message);
-  }
-});
+  });
+}
 
 // ---------- Production static hosting ----------
 const clientDist = path.join(__dirname, "..", "..", "client", "dist");

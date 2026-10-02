@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
@@ -12,7 +12,7 @@ import Reveal from "../components/Reveal";
 import SectionHeading from "../components/SectionHeading";
 import BookingSection from "../components/BookingSection";
 import Lightbox, { PlayBadge } from "../components/Lightbox";
-import { toGalleryItem, withSectionLabel } from "../data/galleryItems";
+import { toGalleryItem, withSectionLabels } from "../gallery/galleryApi";
 import { ICON_MAP } from "../utils/helpers";
 
 const TestimonialsSection = lazy(() => import("../components/TestimonialsSection"));
@@ -72,7 +72,7 @@ export default function Home() {
 
   const sectionByName = useMemo(() => Object.fromEntries(gallerySections.map((s) => [s.name, s])), [gallerySections]);
   const withSection = useCallback(
-    (g, i) => withSectionLabel(toGalleryItem(g, i), sectionByName[g.category] || { name: g.category, title: g.category }),
+    (g, i) => withSectionLabels([toGalleryItem(g, i)], sectionByName[g.category] || { name: g.category, title: g.category })[0],
     [sectionByName]
   );
 

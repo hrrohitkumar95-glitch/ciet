@@ -10,6 +10,7 @@ import Appointment from "../models/Appointment.js";
 import Subscriber from "../models/Subscriber.js";
 import Setting from "../models/Setting.js";
 import { trackVisit } from "../middleware/trackVisit.js";
+import { publishDueBlogs } from "../services/scheduledPublish.js";
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get("/site", asyncHandler(async (_req, res) => {
       getSetting("seo"),
       Service.find({ published: true }).sort({ order: 1, createdAt: 1 }).limit(12),
       Testimonial.find({ published: true }).sort({ featured: -1, createdAt: -1 }).limit(12),
-      GalleryItem.find({ published: true }).sort({ order: 1, featured: -1, createdAt: -1 }),
+      GalleryItem.find({ published: true }).sort({ category: 1, order: 1, featured: -1, createdAt: 1 }),
       Blog.find({ published: true }).sort({ publishedAt: -1 }).limit(3),
       GalleryItem.distinct("category", { published: true }),
     ]);
@@ -65,15 +66,53 @@ router.get("/services/:slug", asyncHandler(async (req, res) => {
   res.json(item);
 }));
 
+/**
+ * Gallery items plus the section/category metadata the page needs, in a single
+ * request. The frontend used to fire three calls (items, categories, sections)
+ * on every render; bundling them removes duplicate round-trips and the chance of
+ * the grid and its filters disagreeing.
+ *
+ * `category` accepts a section name (or "All") exactly as before, so existing
+ * callers keep working.
+ */
 router.get("/gallery", asyncHandler(async (req, res) => {
-  const { category, page = 1, limit = 12 } = req.query;
+  const { category } = req.query;
+
+  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit, 10) || 12));
+
   const filter = { published: true };
   if (category && category !== "All") filter.category = category;
-  const [items, total] = await Promise.all([
-    GalleryItem.find(filter).sort({ order: 1, featured: -1, createdAt: -1 }).skip((page - 1) * limit).limit(Number(limit)),
+
+  /* Sections before items: `order` restarts inside every section, so sorting on
+     it alone interleaves the years and scrambles the gallery. */
+  const GALLERY_SORT = { category: 1, order: 1, featured: -1, createdAt: 1 };
+
+  const [items, total, sections, categories] = await Promise.all([
+    GalleryItem.find(filter).sort(GALLERY_SORT).skip((page - 1) * limit).limit(limit),
     GalleryItem.countDocuments(filter),
+    GallerySection.find().sort({ order: 1, createdAt: 1 }).lean(),
+    GalleryItem.distinct("category", { published: true }),
   ]);
-  res.json({ items, total, page: Number(page), pages: Math.ceil(total / limit) });
+
+  const counts = await GalleryItem.aggregate([
+    { $match: { published: true } },
+    { $group: { _id: "$category", n: { $sum: 1 } } },
+  ]);
+  const countByCategory = Object.fromEntries(counts.map((c) => [c._id, c.n]));
+
+  res.json({
+    items,
+    total,
+    page,
+    pages: Math.max(1, Math.ceil(total / limit)),
+    categories,
+    /* Sections with no published photos are omitted: a filter chip that can only
+       ever show an empty result is worse than no chip at all. */
+    sections: sections
+      .map((s) => ({ ...s, count: countByCategory[s.name] || 0 }))
+      .filter((s) => s.count > 0),
+  });
 }));
 
 router.get("/gallery/categories", asyncHandler(async (_req, res) => {
@@ -81,23 +120,41 @@ router.get("/gallery/categories", asyncHandler(async (_req, res) => {
 }));
 
 router.get("/gallery/sections", asyncHandler(async (_req, res) => {
-  let sections = await GallerySection.find().sort({ order: 1, createdAt: 1 });
-  if (sections.length === 0) {
-    const cats = await GalleryItem.distinct("category", { published: true });
-    if (cats.length) {
-      await GallerySection.insertMany(cats.map((c, i) => ({ name: c, title: c, order: i + 1, published: true })));
-      sections = await GallerySection.find().sort({ order: 1, createdAt: 1 });
-    }
+  let sections = await GallerySection.find().sort({ order: 1, createdAt: 1 }).lean();
+
+  /* Self-heal: any category used by a published item must have a section row so
+     the filter bar cannot lose a group of photos. `name` is unique, so this is
+     an upsert rather than insertMany — concurrent cold starts would otherwise
+     collide on the unique index. */
+  const cats = await GalleryItem.distinct("category", { published: true });
+  const known = new Set(sections.map((s) => s.name));
+  const missing = cats.filter((c) => c && !known.has(c));
+  if (missing.length) {
+    await GallerySection.bulkWrite(
+      missing.map((name) => ({
+        updateOne: {
+          filter: { name },
+          update: { $setOnInsert: { name, title: name, published: true } },
+          upsert: true,
+        },
+      }))
+    );
+    sections = await GallerySection.find().sort({ order: 1, createdAt: 1 }).lean();
   }
+
   const counts = await GalleryItem.aggregate([
     { $match: { published: true } },
     { $group: { _id: "$category", n: { $sum: 1 } } },
   ]);
   const map = Object.fromEntries(counts.map((c) => [c._id, c.n]));
-  res.json(sections.map((s) => ({ ...s.toObject(), count: map[s.name] || 0 })));
+  res.json(sections.map((s) => ({ ...s, count: map[s.name] || 0 })).filter((s) => s.count > 0));
 }));
 
 router.get("/blogs", asyncHandler(async (req, res) => {
+  /* On serverless there is no cron, so scheduled posts publish themselves here.
+     Fire-and-forget: a failure must never break the listing. */
+  publishDueBlogs();
+
   const { search, category, tag, page = 1, limit = 6, sort = "latest" } = req.query;
   const filter = { published: true };
   if (search) filter.$or = [

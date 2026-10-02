@@ -1,344 +1,283 @@
-﻿import { useEffect, useState, useCallback, useMemo } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, CalendarCheck } from "lucide-react";
-import api from "../api/client";
+import { AnimatePresence } from "framer-motion";
+import { CalendarCheck, MessageCircle } from "lucide-react";
 import SEO from "../components/SEO";
 import Reveal from "../components/Reveal";
-import PageLoader from "../components/PageLoader";
-import Lightbox, { PlayBadge } from "../components/Lightbox";
-import LazyImage from "../components/LazyImage";
-import ImgFallback from "../components/ImgFallback";
-import Counter from "../components/Counter";
-import { useSite } from "../context/SiteContext";
-import { toGalleryItems, withSectionLabels, titleOf } from "../data/galleryItems";
+import Lightbox from "../components/Lightbox";
+import GalleryHero from "../components/gallery/GalleryHero";
+import GalleryFilters from "../components/gallery/GalleryFilters";
+import GalleryGrid from "../components/gallery/GalleryGrid";
+import GalleryNotice from "../components/gallery/GalleryNotice";
+import GalleryEmptyState from "../components/gallery/GalleryEmptyState";
+import { LOADING_BUDGET_MS, loadGallery, loadFallbackItems } from "../gallery/galleryApi";
+import { eventTypesIn } from "../gallery/eventTypes";
 
-const PAGE_SIZE = 12;
+const SEO_TITLE = "Gallery | GOLZ \u2013 Giggles of Livez";
+const SEO_DESCRIPTION =
+  "Browse the GOLZ Nutrition gallery from Mysuru: photographs from nutrition workshops, awareness talks, conferences, hospital and institution visits, community events and life at our diet clinic.";
 
-const STATS = [
-  { icon: "⭐", value: 500, suffix: "+", label: "Happy Clients" },
-  { icon: "🥗", value: 1200, suffix: "+", label: "Meal Plans" },
-  { icon: "📸", value: 100, suffix: "+", label: "Workshops" },
-  { icon: "🏆", value: 10, suffix: "+", label: "Years Experience" },
-];
-
-const CTA_TEXT = { title: "Ready to Start Your Healthy Journey?", subtitle: "Personalized, science-backed nutrition plans — built around you, your body and your goals." };
+const CANONICAL = typeof window !== "undefined" ? `${window.location.origin}/gallery` : "";
 
 export default function Gallery() {
-  const { site } = useSite();
-  const [items, setItems] = useState([]);
-  const [category, setCategory] = useState("All");
+  const [items, setItems] = useState(null);
   const [sections, setSections] = useState([]);
-  const [categories, setCategories] = useState(["All"]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [lightbox, setLightbox] = useState(null);
-
-  const load = useCallback(async (cat, pg, lim = PAGE_SIZE) => {
-    setLoading(true);
-    try {
-      const { data } = await api.get("/public/gallery", { params: { category: cat, page: pg, limit: lim } });
-      const next = toGalleryItems(data.items);
-      setItems((prev) => (pg === 1 ? next : [...prev, ...next]));
-      setPages(data.pages);
-      setTotal(data.total);
-    } catch {
-      setItems([]);
-      setPages(1);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [live, setLive] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [section, setSection] = useState("All");
+  const [type, setType] = useState("All");
+  const [attempt, setAttempt] = useState(0);
+  const [viewer, setViewer] = useState(null);
 
   useEffect(() => {
-    // Section/category metadata is optional: the grid still renders from items
-    // alone, so a failure here must not reject or blank the page.
-    api.get("/public/gallery/sections").then(({ data }) => setSections(data || [])).catch(() => setSections([]));
-    api.get("/public/gallery/categories").then(({ data }) => setCategories(["All", ...(data || [])])).catch(() => setCategories(["All"]));
-  }, []);
+    let alive = true;
+    setItems(null);
+    setLive(false);
+    setRetrying(true);
 
-  useEffect(() => {
-    setPage(1);
-    load(category, 1, category === "All" ? 1000 : PAGE_SIZE);
-  }, [category, load]);
+    loadGallery().then(({ items: loaded, sections: loadedSections, source: origin, error }) => {
+      if (!alive) return;
+      setRetrying(false);
+      setItems(loaded);
+      setSections(loadedSections);
+      setLive(origin === "api");
+      if (error) console.error("[gallery] live gallery unavailable, using bundled snapshot:", error.message);
+    });
 
-  const sectionByName = useMemo(() => Object.fromEntries(sections.map((s) => [s.name, s])), [sections]);
+    /* Skeletons run once at most: if the API stays silent past the budget we
+       swap in the bundled snapshot rather than spinning forever. */
+    const budget = setTimeout(async () => {
+      if (!alive) return;
+      const snapshot = await loadFallbackItems();
+      if (!alive) return;
+      setItems((current) => current ?? snapshot);
+      setSections((current) =>
+        current.length
+          ? current
+          : [...new Set(snapshot.map((i) => i.section))]
+              .sort()
+              .map((name, index) => ({
+                name,
+                title: name,
+                order: index + 1,
+                published: true,
+                count: snapshot.filter((i) => i.section === name).length,
+              }))
+      );
+    }, LOADING_BUDGET_MS);
 
-  const secInfo = useCallback((cat, list) => sectionByName[cat] || { name: cat, title: cat, description: "", cover: "", count: list.length }, [sectionByName]);
+    return () => {
+      alive = false;
+      clearTimeout(budget);
+    };
+  }, [attempt]);
 
-  const allSectionNames = useMemo(() => new Set(sections.map((s) => s.name)), [sections]);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
-  const chipList = useMemo(() => {
-    const names = sections.filter((s) => s.published !== false).map((s) => s.name);
-    const extras = categories.filter((c) => c !== "All" && !allSectionNames.has(c));
-    return ["All", ...names, ...extras];
-  }, [sections, categories, allSectionNames]);
+  const visibleSections = useMemo(() => sections.filter((s) => s.published !== false), [sections]);
 
-  const grouped = useMemo(() => {
-    const map = new Map();
-    for (const it of items) {
-      if (!map.has(it.section)) map.set(it.section, []);
-      map.get(it.section).push(it);
-    }
-    const hidden = new Set(sections.filter((s) => s.published === false).map((s) => s.name));
-    const order = sections.filter((s) => s.published !== false).map((s) => s.name);
-    const extras = [...map.keys()].filter((c) => !hidden.has(c) && !order.includes(c));
-    return [...order, ...extras].map((name) => [name, withSectionLabels(map.get(name) || [], sectionByName[name])]);
-  }, [items, sections, sectionByName]);
+  const types = useMemo(() => (items?.length ? eventTypesIn(items) : []), [items]);
 
-  const open = useCallback(async (cat, index = 0) => {
-    try {
-      const { data } = await api.get("/public/gallery", { params: { category: cat, limit: 1000 } });
-      if (!data.items.length) return;
-      const section = secInfo(cat, data.items);
-      const list = withSectionLabels(toGalleryItems(data.items), section);
-      setLightbox({ items: list, index: Math.min(index, Math.max(list.length - 1, 0)) });
-    } catch { /* noop */ }
-  }, [secInfo]);
-  const navigate = useCallback((index) => setLightbox((lb) => (lb ? { ...lb, index } : lb)), []);
+  /* Section and type are independent axes, so the two filter rows combine. */
+  const filtered = useMemo(() => {
+    if (!items) return [];
+    return items.filter((item) => {
+      const bySection = section === "All" || item.section === section;
+      const byType =
+        type === "All" ||
+        (() => {
+          const haystack = `${item.eventName ?? ""} ${item.caption ?? ""}`;
+          return eventTypesIn([item])[0]?.key === type;
+        })();
+      return bySection && byType;
+    });
+  }, [items, section, type]);
 
-  const renderGrid = (list, onOpen) => (
-    <motion.div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
-      <AnimatePresence>
-        {list.map((item, i) => (
-          <motion.button
-            key={item.id}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.4, delay: (i % 6) * 0.05, ease: [0.21, 0.65, 0.36, 1] }}
-            onClick={() => onOpen(i)}
-            className="group relative mb-6 block w-full cursor-pointer overflow-hidden rounded-[20px] break-inside-avoid bg-white text-left shadow-soft transition-shadow duration-300 hover:shadow-lift focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
-            aria-label={`Open image: ${titleOf(item)}`}
-          >
-            <div className="relative overflow-hidden">
-              {item.type === "video" ? (
-                <>
-                  <video src={item.image} muted className="aspect-[4/3] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
-                  <PlayBadge />
-                </>
-              ) : (
-                <LazyImage
-                  src={item.image}
-                  alt={item.alt || titleOf(item)}
-                  natural
-                  className="w-full"
-                  imgClassName="transition-transform duration-700 ease-out group-hover:scale-110"
-                />
-              )}
+  const loading = items === null;
+  const isEmpty = !loading && items.length === 0;
+  /* `live` tracks what is actually on screen, not what the request returned, so
+     the notice appears the moment the bundled snapshot is shown. */
+  const showNotice = !loading && !isEmpty && !live;
 
-              {item.year && (
-                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-primary shadow-card backdrop-blur">
-                  {item.year}
-                </span>
-              )}
-            </div>
+  const stats = useMemo(() => {
+    if (loading || !items.length) return [];
+    const years = new Set(items.map((i) => i.year).filter(Boolean));
+    const events = new Set(items.map((i) => i.eventName).filter(Boolean));
+    return [
+      { value: items.length, label: "Photographs" },
+      { value: events.size, label: "Events documented" },
+      { value: years.size, label: "Years archived" },
+      { value: sections.length, label: "Collections" },
+    ];
+  }, [items, sections.length, loading]);
 
-            <span className="block px-4 py-3.5">
-              <span className="block font-heading text-[15px] font-semibold leading-snug text-ink transition-colors group-hover:text-primary line-clamp-2">
-                {titleOf(item)}
-              </span>
-            </span>
-          </motion.button>
-        ))}
-      </AnimatePresence>
-    </motion.div>
-  );
+  const openViewer = useCallback((index) => setViewer({ items: filtered, index }), [filtered]);
+  const navigate = useCallback((index) => setViewer((v) => (v ? { ...v, index } : v)), []);
 
-  const sectionHeader = (sec, onOpen, { showPill = true } = {}) => {
-    if (!sec) return null;
-    return (
-      <button
-        onClick={onOpen}
-        className="group mb-7 flex w-full cursor-pointer items-center gap-4 rounded-2xl text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
-        aria-label={`Open ${sec.title || sec.name}`}
-      >
-        {sec.cover && <ImgFallback src={sec.cover} alt="" className="h-16 w-24 shrink-0 rounded-2xl object-cover shadow-soft" fallbackClassName="h-16 w-24 shrink-0 rounded-2xl" />}
-        <div className="min-w-0 flex-1">
-          <h2 className="font-heading text-2xl font-bold tracking-tight text-ink transition-colors group-hover:text-primary">{sec.title || sec.name}</h2>
-          {sec.description && <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">{sec.description}</p>}
-        </div>
-        {showPill && sec.count > 0 && (
-          <span className="shrink-0 rounded-full border border-primary/25 bg-white px-4 py-2 text-sm font-semibold text-primary transition-all duration-300 group-hover:border-primary group-hover:bg-primary group-hover:text-white">
-            View all ({sec.count}) <ChevronRight size={14} className="inline transition-transform duration-300 group-hover:translate-x-0.5" />
-          </span>
-        )}
-      </button>
-    );
-  };
+  /* A real photo from the archive, so the social card shows the actual gallery
+     instead of an empty tag. Falls back to leaving the tag unset. */
+  const ogImage = useMemo(() => items?.find((i) => i.type === "image" && i.image)?.image, [items]);
 
   return (
     <>
       <SEO
+        fullTitle={SEO_TITLE}
         title="Gallery"
-        description="Explore healthy recipes, inspiring client transformations, workshops, seminars and moments from the GOLZ nutrition clinic, Mysuru."
-        keywords="nutrition gallery, healthy recipes, client transformations, diet clinic photos"
+        description={SEO_DESCRIPTION}
+        image={ogImage}
+        keywords="nutrition gallery Mysuru, nutrition workshop photos, awareness talk, conference, hospital visit, diet clinic Mysuru, GOLZ Nutrition events"
+        canonical={CANONICAL}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "ImageGallery",
+          name: "GOLZ Nutrition Gallery",
+          description: SEO_DESCRIPTION,
+          url: CANONICAL,
+        }}
       />
 
-      {/* ================= HERO ================= */}
-      <section className="relative overflow-hidden bg-primary">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary-darker/80 via-primary/75 to-primary" />
-        <div className="absolute -right-24 top-8 h-64 w-64 rounded-full bg-lime/15 blur-3xl" aria-hidden="true" />
-        <div className="absolute -left-20 bottom-0 h-56 w-56 rounded-full bg-sage/15 blur-3xl" aria-hidden="true" />
+      <GalleryHero stats={stats} />
 
-        <div className="container-x relative z-10 flex min-h-[320px] flex-col justify-center py-14 sm:min-h-[340px]">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.21, 0.65, 0.36, 1] }}
-            className="max-w-2xl"
-          >
-            <nav className="mb-5 flex items-center gap-1.5 text-sm text-[#DBE6D5]/70" aria-label="Breadcrumb">
-              <Link to="/" className="transition hover:text-lime">Home</Link>
-              <ChevronRight size={14} />
-              <span className="text-[#EEF3EA]/90">Gallery</span>
-            </nav>
-            <h1 className="text-4xl font-bold leading-tight text-[#EEF3EA] sm:text-5xl">Glimpse inside world of Golz Nutrition</h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#DBE6D5]/80">
-              Explore healthy recipes, inspiring client transformations, workshops, seminars, and moments from our nutrition clinic.
-            </p>
-          </motion.div>
+      {/* ============ GALLERY ============ */}
+      <section className="bg-paper section-pad" aria-labelledby="gallery-heading">
+        <div className="container-x">
+          <div className="flex flex-col gap-4 border-b border-line pb-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-limeDark">Our Archive</span>
+              <h2
+                id="gallery-heading"
+                className="mt-3 font-heading text-3xl font-semibold leading-tight text-ink sm:text-4xl lg:text-[42px] lg:leading-[1.12]"
+              >
+                {loading
+                  ? "Loading the archive"
+                  : isEmpty
+                    ? "Nothing to show yet"
+                    : `${filtered.length} ${filtered.length === 1 ? "photograph" : "photographs"}`}
+              </h2>
+            </div>
+
+            {!loading && !isEmpty ? (
+              <p className="max-w-md text-sm leading-relaxed text-muted">
+                Real moments from our workshops, talks, hospital programmes and community events. Select any photo to
+                view it full size.
+              </p>
+            ) : null}
+          </div>
+
+          {isEmpty ? (
+            <GalleryEmptyState />
+          ) : (
+            <>
+              <div className="mt-8">
+                <GalleryFilters
+                  sections={visibleSections}
+                  types={types}
+                  section={section}
+                  type={type}
+                  counts={{ total: items?.length ?? 0 }}
+                  onSection={setSection}
+                  onType={setType}
+                />
+              </div>
+
+              <div className="mt-10">
+                {showNotice ? <GalleryNotice onRetry={retry} busy={retrying} /> : null}
+
+                <GalleryGrid items={filtered} loading={loading} onOpen={openViewer} />
+
+                {!loading && filtered.length === 0 ? (
+                  <div className="mt-10 rounded-[22px] border border-line bg-white px-6 py-14 text-center">
+                    <p className="font-heading text-lg font-semibold text-ink">No photos match this combination</p>
+                    <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
+                      Try another year or a different event type.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSection("All");
+                        setType("All");
+                      }}
+                      className="btn-outline mt-6"
+                    >
+                      Clear filters
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
-      {/* ================= GALLERY ================= */}
-      <section className="bg-paper section-pad">
-        <div className="container-x">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.5 }}
-            className="mb-12 flex flex-wrap items-center justify-center gap-2.5"
-            role="tablist"
-            aria-label="Gallery categories"
-          >
-            {chipList.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                role="tab"
-                aria-selected={category === c}
-                className={`cursor-pointer rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-out focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${
-                  category === c
-                    ? "bg-primary text-white shadow-soft"
-                    : "border border-primary/25 bg-white text-primary hover:border-primary hover:bg-primary/5"
-                }`}
-              >
-                {c}
-                {c === "All" && total > 0 && <span className={`ml-1.5 text-xs ${category === c ? "text-white/70" : "text-primary/60"}`}>({total})</span>}
-              </button>
-            ))}
-          </motion.div>
+      {/* ============ MOMENTS FROM GOLZ ============ */}
+      {!isEmpty ? (
+        <section className="bg-section-sage section-pad">
+          <div className="container-x">
+            <Reveal className="mx-auto max-w-3xl text-center">
+              <span className="mb-5 inline-flex items-center rounded-full border border-primary/30 bg-white/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+                Moments from GOLZ
+              </span>
+              <h2 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">
+                Moments from the GOLZ archive
+              </h2>
+              <p className="mx-auto mt-5 max-w-[640px] text-base leading-[1.8] text-muted sm:text-lg">
+                From hands-on nutrition workshops and awareness talks to conferences, hospital visits and events &mdash; a
+                window into how science-backed nutrition comes alive.
+              </p>
+            </Reveal>
 
-          {loading && page === 1 ? (
-            <PageLoader label="Loading gallery…" />
-          ) : category === "All" ? (
-            <div className="space-y-16">
-              {grouped.map(([cat, list]) => (
-                <div key={cat}>
-                  {sectionHeader(secInfo(cat, list), () => open(cat, 0))}
-                  {list.length === 0 ? (
-                    <p className="rounded-2xl border border-dashed border-line bg-white/60 px-6 py-12 text-center text-sm text-charcoal/50">
-                      No images have been added to this section yet.
-                    </p>
-                  ) : (
-                    <>
-                      {renderGrid(list.slice(0, 4), (i) => open(cat, i))}
-                      {list.length > 4 && (
-                        <div className="mt-7 text-center">
-                          <button
-                            onClick={() => open(cat, 0)}
-                            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-primary/25 bg-white px-6 py-3 text-sm font-semibold text-primary shadow-soft transition-all duration-300 hover:border-primary hover:bg-primary hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
-                          >
-                            View all {list.length} {list.length === 1 ? "photo" : "photos"} <ChevronDown size={16} />
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+              {[
+                { title: "Evidence first", text: "Every plan starts with labs, history and medication &mdash; not guesswork." },
+                { title: "Real people", text: "Plans shaped around your work, family, culture and what you actually enjoy eating." },
+                { title: "Built to last", text: "Sustainable habits, not crash diets. Progress you can keep after the plan ends." },
+                { title: "One nutritionist", text: "The same person follows you through, adjusting as your body responds." },
+              ].map((point, i) => (
+                <Reveal key={point.title} delay={i * 0.07}>
+                  <div className="h-full rounded-[22px] border border-line bg-white p-7 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lift motion-reduce:transform-none">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-sage text-primary">
+                      <span className="font-heading text-lg font-bold">{String(i + 1).padStart(2, "0")}</span>
+                    </span>
+                    <h3 className="mt-5 font-heading text-lg font-semibold text-ink">{point.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted">{point.text}</p>
+                  </div>
+                </Reveal>
               ))}
             </div>
-          ) : (
-            <div>
-              {sectionHeader(secInfo(category, items), () => open(category, 0), { showPill: false })}
-              {renderGrid(withSectionLabels(items, sectionByName[category]), (i) => open(category, i))}
-            </div>
-          )}
-
-          {category !== "All" && page < pages && (
-            <div className="mt-14 text-center">
-              <button
-                onClick={() => { const next = page + 1; setPage(next); load(category, next); }}
-                disabled={loading}
-                className="btn-outline"
-              >
-                {loading ? "Loading…" : "Load More"} <ChevronDown size={17} />
-              </button>
-            </div>
-          )}
-
-          {!loading && items.length === 0 && (
-            <p className="py-20 text-center text-charcoal/50">No images have been added to this section yet.</p>
-          )}
-        </div>
-      </section>
-
-      {/* ================= MOMENTS FROM GOLZ ================= */}
-      <section className="bg-section-sage section-pad">
-        <div className="container-x">
-          <Reveal className="mx-auto max-w-2xl text-center">
-            <span className="mb-5 inline-flex items-center rounded-full border border-primary/30 bg-white/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-              Moments from GOLZ
-            </span>
-            <h2 className="text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">
-              Glimpse inside world of Golz Nutrition
-            </h2>
-            <p className="mx-auto mt-5 max-w-[600px] text-base leading-[1.8] text-muted sm:text-lg">
-              From healthy cooking workshops and awareness seminars to real client transformations and everyday life at the clinic — a window into how science-backed nutrition comes alive.
-            </p>
-          </Reveal>
-
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-            {STATS.map((s, i) => (
-              <Reveal key={s.label} delay={i * 0.08}>
-                <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[24px] border border-line bg-white p-6 text-center shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift">
-                  <span className="text-3xl" aria-hidden="true">{s.icon}</span>
-                  <p className="mt-3 font-heading text-4xl font-bold tracking-tight text-primary sm:text-5xl">
-                    <Counter value={s.value} suffix={s.suffix} />
-                  </p>
-                  <p className="mt-1.5 text-sm font-medium text-muted">{s.label}</p>
-                </div>
-              </Reveal>
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      {/* ================= CTA ================= */}
+      {/* ============ CTA ============ */}
       <section className="relative overflow-hidden bg-primary section-pad">
-        <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.06) 0%, transparent 45%), radial-gradient(circle at 80% 85%, rgba(163,198,68,0.1) 0%, transparent 50%)" }} aria-hidden="true" />
-        <div className="pointer-events-none absolute -left-24 top-10 h-64 w-64 rounded-full border border-white/10" aria-hidden="true" />
-        <div className="pointer-events-none absolute -right-20 bottom-6 h-72 w-72 rounded-full border border-white/10" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.06) 0%, transparent 45%), radial-gradient(circle at 80% 85%, rgba(163,198,68,0.1) 0%, transparent 50%)",
+          }}
+          aria-hidden="true"
+        />
 
         <div className="container-x relative z-10 text-center">
           <Reveal>
             <h2 className="mx-auto max-w-2xl font-heading text-4xl font-semibold leading-tight text-[#EEF3EA] sm:text-5xl">
-              {CTA_TEXT.title}
+              Ready to Start Your Healthy Journey?
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#DBE6D5]/80">{CTA_TEXT.subtitle}</p>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#DBE6D5]/80">
+              Personalized, science-backed nutrition plans &mdash; built around you, your body and your goals.
+            </p>
+
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link to="/contact" className="btn-lime w-full transition-transform duration-300 ease-out hover:scale-[1.02] sm:w-auto">
-                <CalendarCheck size={18} /> Book Consultation
+                <CalendarCheck size={18} aria-hidden="true" />
+                Book Consultation
               </Link>
               <Link
                 to="/contact"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/25 bg-white/5 px-7 py-3.5 font-body text-[15px] font-semibold text-[#EEF3EA] backdrop-blur transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-lime hover:text-lime sm:w-auto"
               >
+                <MessageCircle size={18} aria-hidden="true" />
                 Contact Us
               </Link>
             </div>
@@ -347,7 +286,14 @@ export default function Gallery() {
       </section>
 
       <AnimatePresence>
-        {lightbox && <Lightbox items={lightbox.items} index={lightbox.index} onClose={() => setLightbox(null)} onNavigate={navigate} />}
+        {viewer ? (
+          <Lightbox
+            items={viewer.items}
+            index={viewer.index}
+            onClose={() => setViewer(null)}
+            onNavigate={navigate}
+          />
+        ) : null}
       </AnimatePresence>
     </>
   );

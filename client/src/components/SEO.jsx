@@ -10,12 +10,18 @@ function upsertMeta(attr, key, content) {
   if (content) el.setAttribute("content", content);
 }
 
-/** Lightweight client-side SEO: title, meta, Open Graph, Twitter and JSON-LD. */
-export default function SEO({ title, description, image, keywords, jsonLd, canonical }) {
+/**
+ * Lightweight client-side SEO: title, meta, Open Graph, Twitter and JSON-LD.
+ *
+ * `fullTitle` sets document.title verbatim — use it when a page needs an exact
+ * title (for example "Services | GOLZ – Giggles of Livez"). Otherwise the
+ * `title` prop is suffixed with the site name.
+ */
+export default function SEO({ title, fullTitle, description, image, keywords, jsonLd, canonical }) {
   const siteName = "GOLZ (Giggles of Livez)";
 
   useEffect(() => {
-    document.title = title ? `${title} | ${siteName}` : siteName;
+    document.title = fullTitle || (title ? `${title} | ${siteName}` : siteName);
     upsertMeta("name", "description", description || "");
     upsertMeta("property", "og:title", document.title);
     upsertMeta("property", "og:description", description || "");
@@ -47,7 +53,7 @@ export default function SEO({ title, description, image, keywords, jsonLd, canon
       script.text = JSON.stringify(jsonLd);
       document.head.appendChild(script);
     }
-  }, [title, description, image, keywords, jsonLd, canonical]);
+  }, [title, fullTitle, description, image, keywords, jsonLd, canonical]);
 
   return null;
 }

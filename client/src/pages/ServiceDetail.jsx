@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, BadgeCheck, CalendarCheck, CheckCircle2, Clock, Users, Wallet } from "lucide-react";
-import api from "../api/client";
 import SEO from "../components/SEO";
 import PageHero from "../components/PageHero";
 import { useSite } from "../context/SiteContext";
 import { ICON_MAP } from "../utils/helpers";
+import { loadService } from "../services/servicesApi";
 
 /* Individual service detail view — /services/:slug */
 export default function ServiceDetail() {
@@ -14,20 +14,26 @@ export default function ServiceDetail() {
   const { site } = useSite();
   const [service, setService] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [fromFallback, setFromFallback] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setNotFound(false);
     setService(null);
+    setFromFallback(false);
     window.scrollTo({ top: 0 });
-    api
-      .get(`/public/services/${slug}`)
-      .then(({ data }) => {
-        if (alive) setService(data);
-      })
-      .catch(() => {
-        if (alive) setNotFound(true);
-      });
+
+    loadService(slug).then(({ service: item, source, error }) => {
+      if (!alive) return;
+      if (item) {
+        setService(item);
+        setFromFallback(source === "fallback");
+        if (error) console.error(`[service:${slug}] live record unavailable, using bundled copy:`, error.message);
+      } else {
+        setNotFound(true);
+      }
+    });
+
     return () => {
       alive = false;
     };
@@ -65,6 +71,7 @@ export default function ServiceDetail() {
     <>
       <SEO
         title={service.title}
+        fullTitle={`${service.title} | GOLZ \u2013 Giggles of Livez`}
         description={service.shortDesc}
         image={service.image}
         keywords={`${service.title}, nutrition, dietitian, diet plan`}
@@ -79,6 +86,14 @@ export default function ServiceDetail() {
       />
 
       <PageHero title={service.title} subtitle={service.shortDesc} breadcrumb={["Services", service.title]} image={service.image} />
+
+      {fromFallback ? (
+        <div className="container-x pt-8">
+          <p role="status" className="rounded-[18px] border border-honey/40 bg-honey/10 px-5 py-4 text-sm leading-relaxed text-ink/80">
+            Showing our saved details for this service while we reconnect. Booking below works as normal.
+          </p>
+        </div>
+      ) : null}
 
       <section className="section-pad pt-0">
         <div className="container-x grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
