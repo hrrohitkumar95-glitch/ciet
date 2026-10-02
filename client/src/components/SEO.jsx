@@ -17,7 +17,7 @@ function upsertMeta(attr, key, content) {
  * title (for example "Services | GOLZ – Giggles of Livez"). Otherwise the
  * `title` prop is suffixed with the site name.
  */
-export default function SEO({ title, fullTitle, description, image, keywords, jsonLd, canonical }) {
+export default function SEO({ title, fullTitle, description, image, keywords, jsonLd, canonical, noindex = false }) {
   const siteName = "GOLZ (Giggles of Livez)";
 
   useEffect(() => {
@@ -31,6 +31,11 @@ export default function SEO({ title, fullTitle, description, image, keywords, js
     upsertMeta("name", "twitter:title", document.title);
     upsertMeta("name", "twitter:description", description || "");
     upsertMeta("name", "keywords", keywords || "");
+    /* An error or 404 page must never be indexed as real content. The CMS
+       area is excluded regardless of what the page asks for, so an admin route
+       can never be published by forgetting a prop. */
+    const isAdmin = window.location.pathname.startsWith("/admin");
+    upsertMeta("name", "robots", noindex || isAdmin ? "noindex, nofollow" : "index, follow");
 
     let link = document.head.querySelector('link[rel="canonical"]');
     if (canonical) {
@@ -53,7 +58,7 @@ export default function SEO({ title, fullTitle, description, image, keywords, js
       script.text = JSON.stringify(jsonLd);
       document.head.appendChild(script);
     }
-  }, [title, fullTitle, description, image, keywords, jsonLd, canonical]);
+  }, [title, fullTitle, description, image, keywords, jsonLd, canonical, noindex]);
 
   return null;
 }

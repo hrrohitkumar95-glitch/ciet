@@ -2,24 +2,36 @@ import { Link } from "react-router-dom";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
 import LazyImage from "../LazyImage";
 import { formatDate, stripHtml, truncate } from "../../utils/helpers";
+import { coverAt, coverSrcSet } from "../../blogs/blogsApi";
 
-/** Blog article card: cover image, category badge, date, reading time and excerpt. */
-export default function BlogCard({ blog }) {
+/**
+ * Article card: cover image, category badge, date, reading time and excerpt.
+ *
+ * The whole card is one link target, but only the title and the "Read Article"
+ * label are interactive, so keyboard users get two clear stops instead of a
+ * duplicated control.
+ */
+export default function BlogCard({ blog, eager = false }) {
   if (!blog) return null;
 
   const title = blog.title?.trim();
+  const href = blog.url || `/blogs/${blog.slug}`;
   const date = formatDate(blog.publishedAt || blog.createdAt);
-  const excerpt = truncate(stripHtml(blog.excerpt || blog.content), 110);
+  const summary = blog.excerpt?.trim() || stripHtml(blog.content || "");
+  const excerpt = truncate(summary, 110);
 
   return (
     <article className="card group relative flex h-full flex-col overflow-hidden">
-      <div className="relative h-52 overflow-hidden sm:h-56">
+      <div className="relative aspect-[16/10] overflow-hidden bg-sage">
         {blog.cover ? (
           <LazyImage
-            src={blog.cover}
+            src={coverAt(blog.cover, 800)}
+            srcSet={coverSrcSet(blog.cover)}
+            sizes="(min-width: 1280px) 300px, (min-width: 768px) 45vw, 100vw"
             alt={title ? `${title} — article cover` : "Article cover image"}
             className="h-full w-full"
             imgClassName="transition-transform duration-700 motion-reduce:transform-none group-hover:scale-105"
+            loading={eager ? "eager" : "lazy"}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-sage" aria-hidden="true" />
@@ -48,17 +60,28 @@ export default function BlogCard({ blog }) {
           ) : null}
         </div>
 
-        {title ? <h3 className="font-heading text-[19px] font-semibold leading-snug text-ink transition-colors group-hover:text-primary">{title}</h3> : null}
-        {excerpt ? <p className="mt-2.5 flex-1 text-sm leading-relaxed text-muted">{excerpt}</p> : null}
+        {title ? (
+          <h3 className="font-heading text-[19px] font-semibold leading-snug text-ink transition-colors group-hover:text-primary">
+            <Link
+              to={href}
+              className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/25"
+              aria-label={title ? `Read article: ${title}` : "Read article"}
+            >
+              {title}
+            </Link>
+          </h3>
+        ) : null}
 
-        <Link
-          to={`/blogs/${blog.slug}`}
-          className="relative z-10 mt-5 inline-flex w-fit items-center gap-2 rounded-lg text-sm font-semibold text-primary after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/25"
-          aria-label={title ? `Read article: ${title}` : "Read article"}
-        >
-          Read More
-          <ArrowRight size={16} className="transition-transform duration-300 motion-reduce:transform-none group-hover:translate-x-1" aria-hidden="true" />
-        </Link>
+        {excerpt ? <p className="mt-2.5 flex-1 text-sm leading-relaxed text-muted">{excerpt}</p> : <span className="flex-1" />}
+
+        <span className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg text-sm font-semibold text-primary">
+          Read Article
+          <ArrowRight
+            size={16}
+            className="transition-transform duration-300 motion-reduce:transform-none group-hover:translate-x-1"
+            aria-hidden="true"
+          />
+        </span>
       </div>
     </article>
   );

@@ -1,7 +1,12 @@
 import { Search, X } from "lucide-react";
 
-/** Centred instant search field for the blog listing. */
-export default function BlogSearch({ value, onChange, resultCount }) {
+/**
+ * Search field for the blog listing.
+ *
+ * Matching runs in the browser over the articles already on screen, so typing
+ * never issues a request; the count is announced politely for screen readers.
+ */
+export default function BlogSearch({ value, onChange, resultCount, loading = false }) {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <label htmlFor="blog-search" className="sr-only">
@@ -15,6 +20,7 @@ export default function BlogSearch({ value, onChange, resultCount }) {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Search articles…"
+          autoComplete="off"
           className="w-full rounded-full border border-line bg-white py-4 pl-12 pr-12 text-base text-ink shadow-soft outline-none transition placeholder:text-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/10"
         />
         {value ? (
@@ -30,7 +36,7 @@ export default function BlogSearch({ value, onChange, resultCount }) {
       </div>
 
       <p className="mt-3 text-center text-sm text-muted" aria-live="polite">
-        {resultCount} {resultCount === 1 ? "article" : "articles"}
+        {loading ? "Loading articles…" : `${resultCount} ${resultCount === 1 ? "article" : "articles"}`}
       </p>
     </div>
   );

@@ -14,7 +14,7 @@ export default function RelatedArticles({ posts = [] }) {
 
         <div className="mt-10 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((blog) => (
-            <BlogCard key={blog._id || blog.slug} blog={blog} />
+            <BlogCard key={blog.id || blog._id || blog.slug} blog={blog} />
           ))}
         </div>
       </div>

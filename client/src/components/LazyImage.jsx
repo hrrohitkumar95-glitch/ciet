@@ -1,7 +1,23 @@
 import { useState } from "react";
 
-/** Lazy image with fade-in and blur-up placeholder. Pass `natural` to keep the image's own aspect ratio. */
-export default function LazyImage({ src, alt = "", className = "", imgClassName = "", natural = false }) {
+/**
+ * Lazy image with fade-in and blur-up placeholder, plus a built-in fallback for
+ * a missing or broken source.
+ *
+ * `natural` keeps the image's own aspect ratio instead of cropping it.
+ * `srcSet`/`sizes`/`loading` are passed straight through so callers can let the
+ * browser fetch a right-sized file; they default to the previous lazy behaviour.
+ */
+export default function LazyImage({
+  src,
+  alt = "",
+  className = "",
+  imgClassName = "",
+  natural = false,
+  srcSet,
+  sizes,
+  loading = "lazy",
+}) {
   const [loaded, setLoaded] = useState(false);
   const [broken, setBroken] = useState(false);
   if (broken || typeof src !== "string" || !src) {
@@ -20,8 +36,10 @@ export default function LazyImage({ src, alt = "", className = "", imgClassName 
     <div className={`overflow-hidden ${className}`}>
       <img
         src={src}
+        srcSet={srcSet}
+        sizes={srcSet ? sizes : undefined}
         alt={alt}
-        loading="lazy"
+        loading={loading}
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setBroken(true)}

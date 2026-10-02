@@ -5,7 +5,7 @@ import SEO from "../components/SEO";
 export default function NotFound() {
   return (
     <>
-      <SEO title="Page Not Found" description="The page you're looking for doesn't exist." />
+      <SEO title="Page Not Found" description="The page you're looking for doesn't exist." noindex />
       <section className="flex min-h-screen items-center justify-center bg-hero-pattern px-4 pt-24">
         <div className="text-center">
           <p className="font-heading text-8xl font-bold text-primary/20 sm:text-9xl">404</p>
