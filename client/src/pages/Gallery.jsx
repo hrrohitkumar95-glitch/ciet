@@ -8,7 +8,6 @@ import Lightbox from "../components/Lightbox";
 import GalleryHero from "../components/gallery/GalleryHero";
 import GalleryFilters from "../components/gallery/GalleryFilters";
 import GalleryGrid from "../components/gallery/GalleryGrid";
-import GalleryNotice from "../components/gallery/GalleryNotice";
 import GalleryEmptyState from "../components/gallery/GalleryEmptyState";
 import { archiveItems, deriveSections, loadGallery, compareFolders } from "../gallery/galleryApi";
 import { eventTypesIn } from "../gallery/eventTypes";
@@ -25,34 +24,30 @@ export default function Gallery() {
      CMS records are merged in afterwards when the request resolves. */
   const [items, setItems] = useState(() => archiveItems());
   const [sections, setSections] = useState(() => deriveSections(archiveItems()));
-  /* "pending" until the CMS request settles, so the notice only ever appears
-     after a real failure and never flashes while a request is still in flight. */
-  const [adminState, setAdminState] = useState("pending");
-  const [retrying, setRetrying] = useState(false);
   const [section, setSection] = useState("All");
   const [type, setType] = useState("All");
-  const [attempt, setAttempt] = useState(0);
   const [viewer, setViewer] = useState(null);
 
+  /* CMS records are merged in quietly: they only ever add photos an administrator
+     uploaded themselves, and the bundled archive already covers everything else.
+     A failed or empty CMS response is logged and nothing else, because the visitor
+     is looking at the complete library either way and an error or retry banner
+     here would only report a problem that cannot affect what they see. */
   useEffect(() => {
     let alive = true;
-    setRetrying(true);
 
-    loadGallery().then(({ items: loaded, sections: loadedSections, source: origin, error }) => {
+    loadGallery().then(({ items: loaded, sections: loadedSections, adminCount, error }) => {
       if (!alive) return;
-      setRetrying(false);
       setItems(loaded);
       setSections(loadedSections);
-      setAdminState(origin === "api" ? "live" : "fallback");
-      if (error) console.error("[gallery] live gallery unavailable, using bundled archive:", error.message);
+      if (error) console.error("[gallery] CMS gallery unavailable, showing the bundled archive:", error.message);
+      else if (adminCount > 0) console.info(`[gallery] merged ${adminCount} CMS upload(s) into the archive`);
     });
 
     return () => {
       alive = false;
     };
-  }, [attempt]);
-
-  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  }, []);
 
   const visibleSections = useMemo(() => sections.filter((s) => s.published !== false), [sections]);
 
@@ -74,9 +69,6 @@ export default function Gallery() {
   }, [items, section, type]);
 
   const isEmpty = items.length === 0;
-  /* Shown only after the CMS half actually failed. The archive is bundled, so
-     the visitor is never left without the full library. */
-  const showNotice = !isEmpty && adminState === "fallback";
 
   /* Photos are laid out as year sections, and each year as its events, so a
      visitor can find a specific occasion instead of scrolling one long wall.
@@ -190,8 +182,6 @@ export default function Gallery() {
               </div>
 
               <div className="mt-10">
-                {showNotice ? <GalleryNotice onRetry={retry} busy={retrying} /> : null}
-
                 {groups.map((group) => (
                   <section
                     key={group.section}

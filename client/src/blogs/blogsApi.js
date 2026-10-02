@@ -238,26 +238,40 @@ const WIDTHS = [480, 800, 1200];
 /**
  * Asks the image host for a smaller copy instead of downloading the original.
  *
- * Blog covers are served by a resizing CDN (Unsplash), so swapping the width
- * parameter is the cheapest real optimisation available: the browser picks a
- * size close to what it renders and the phone never downloads the 1200px file
- * for a 160px card. Any other host is left untouched, because rewriting an
- * unknown URL's query string would break it.
+ * Local GOLZ covers point at the 1600px archive derivative, whose 800px sibling
+ * sits beside it under the same name, so a card can paint from the smaller file.
+ * A remote cover keeps the resizing-CDN path when the host supports it and is
+ * otherwise passed through untouched, because rewriting an unknown URL's query
+ * string would break it.
  */
+const LOCAL_DERIVATIVE = /^(.*\/[^/]+)-1600\.webp$/;
+
 export function coverAt(cover, width) {
   if (!cover) return "";
-  if (!/images\.unsplash\.com/i.test(cover)) return cover;
-  try {
-    const url = new URL(cover);
-    url.searchParams.set("w", String(width));
-    url.searchParams.set("q", "70");
-    return url.toString();
-  } catch {
-    return cover;
+  if (/^https?:\/\//i.test(cover) && !/images\.unsplash\.com/i.test(cover)) return cover;
+
+  const local = LOCAL_DERIVATIVE.exec(cover);
+  if (local && width <= 800) return `${local[1]}-800.webp`;
+
+  if (/images\.unsplash\.com/i.test(cover)) {
+    try {
+      const url = new URL(cover);
+      url.searchParams.set("w", String(width));
+      url.searchParams.set("q", "70");
+      return url.toString();
+    } catch {
+      return cover;
+    }
   }
+  return cover;
 }
 
 export function coverSrcSet(cover) {
-  if (!cover || !/images\.unsplash\.com/i.test(cover)) return undefined;
-  return WIDTHS.map((width) => `${coverAt(cover, width)} ${width}w`).join(", ");
+  if (!cover) return undefined;
+  if (/images\.unsplash\.com/i.test(cover)) {
+    return WIDTHS.map((width) => `${coverAt(cover, width)} ${width}w`).join(", ");
+  }
+  const local = LOCAL_DERIVATIVE.exec(cover);
+  if (!local) return undefined;
+  return `${local[1]}-800.webp 800w, ${cover} 1600w`;
 }

@@ -12,13 +12,15 @@ import Setting from "./models/Setting.js";
 import Visitor from "./models/Visitor.js";
 import { slugify, estimateReadingTime } from "./utils/helpers.js";
 
-const img = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=70`;
+/* Real GOLZ archive photos. Stock/Unsplash art is never seeded: every image is a
+   photograph from the GOLZ event archive, served from /media/gallery. */
+const img = (id) => id;
 
 const SERVICES = [
   {
     title: "Weight Management",
     icon: "Scale",
-    image: img("photo-1512621776951-a57141f2eefd"),
+    image: "/media/gallery/2021-b-1/obesity-myths-and-facts-get-in-depth-understanding-webinar-april-2021-by-golz/obesity-1-1600.webp",
     category: "metabolic",
     forWho: "Anyone wanting to lose or gain weight and keep it that way.",
     shortDesc: "Lose or gain weight through sustainable nutrition, personalized meal planning, and healthy lifestyle changes without restrictive diets.",
@@ -36,7 +38,7 @@ const SERVICES = [
   {
     title: "Prevent & Manage Diabetes",
     icon: "Stethoscope",
-    image: img("photo-1490645935967-10de6ba17061"),
+    image: "/media/gallery/2019/one-day-workshop-enteral-nutrition-in-the-critically-dec-2019/pic-2-1600.webp",
     category: "metabolic",
     forWho: "Prediabetes, Type 2 diabetes, or a family history of it.",
     shortDesc: "Evidence-based nutrition plans to regulate blood sugar, prevent complications, improve insulin sensitivity, and support long-term metabolic health.",
@@ -54,7 +56,7 @@ const SERVICES = [
   {
     title: "Thyroid & PCOS / Hormonal Health",
     icon: "Brain",
-    image: img("photo-1490474418585-ba9bad8fd0ea"),
+    image: "/media/gallery/2021-b-2/women-health-and-hormones-talk-special-program-lady-doctors-feb-2021/invited-webinar-for-lady-doctors-1-1600.webp",
     category: "metabolic",
     forWho: "Hypothyroid, hyperthyroid, PCOS or other hormonal imbalances.",
     shortDesc: "Targeted nutrition therapy to improve thyroid function, balance hormones, reduce PCOS symptoms, and support reproductive wellness.",
@@ -72,7 +74,7 @@ const SERVICES = [
   {
     title: "Heart Health",
     icon: "Heart",
-    image: img("photo-1505576399279-565b52d4ac71"),
+    image: "/media/gallery/2017/nurses-empowerment-apollo-hospital-sep-2017/nurses-empowerment-national-nutrition-month-apollo-hospital-mysore-sept-2017-1-1600.webp",
     category: "metabolic",
     forWho: "Cardiovascular disease, hypertension, high cholesterol, or stroke prevention.",
     shortDesc: "Heart-friendly nutrition programs that support cholesterol management, blood pressure control, and cardiovascular wellness.",
@@ -90,7 +92,7 @@ const SERVICES = [
   {
     title: "Pregnancy Nutrition",
     icon: "PersonStanding",
-    image: img("photo-1504674900247-0877df9cc836"),
+    image: "/media/gallery/2020/invited-program-to-wcd-7th-sep-2020/pictures-of-the-program-wcd-1600.webp",
     category: "family",
     forWho: "Expecting mothers, including those with gestational diabetes or thyroid issues.",
     shortDesc: "Nutrition guidance before, during, and after pregnancy with customized meal plans supporting both mother and baby's health.",
@@ -108,7 +110,7 @@ const SERVICES = [
   {
     title: "Women's Health",
     icon: "Flower2",
-    image: img("photo-1544367567-0f2fcb009e0b"),
+    image: "/media/gallery/2017/bioclinica-corporates-march-2017/women-health-and-empowerment-bioclinica-corporates-march-2017-1-1600.webp",
     category: "family",
     forWho: "Women at every life stage, from teenage years to menopause.",
     shortDesc: "Nutrition support for every stage of a woman's life including fertility, anemia, menopause, hormonal balance, and overall wellness.",
@@ -126,7 +128,7 @@ const SERVICES = [
   {
     title: "Children's Health",
     icon: "Smile",
-    image: img("photo-1546069901-ba9599a7e63c"),
+    image: "/media/gallery/2017/aiish-nov-2017/childrens-days-camp-to-celebrate-childrens-day-aiish-1600.webp",
     category: "family",
     forWho: "Children with low weight, slow growth, frequent illness or fussy eating.",
     shortDesc: "Healthy nutrition plans for children's growth, immunity, development, eating habits, and long-term wellness.",
@@ -144,7 +146,7 @@ const SERVICES = [
   {
     title: "Care for Old Age",
     icon: "Footprints",
-    image: img("photo-1559839734-2b71ea197ec2"),
+    image: "/media/gallery/2021-b-2/webinar-for-senior-citizen-role-of-nutrition-in-aging-webinar-hisar-april-2021/senior-citizen-webinar3-1600.webp",
     category: "family",
     forWho: "Seniors and their families.",
     shortDesc: "Balanced nutrition plans designed for healthy aging, digestion, bone health, immunity, and chronic disease management.",
@@ -162,7 +164,7 @@ const SERVICES = [
   {
     title: "Specially-Abled Child",
     icon: "Accessibility",
-    image: img("photo-1516627145497-ae6968895b74"),
+    image: "/media/gallery/2020/dharwad-school-feb-2020/feb-2020-jss-dharwad-nutrition-for-cdifferently-abled-children-2-day-workshop-for-parents-and-caregivers-1600.webp",
     category: "specialised",
     forWho: "Children with autism, ADHD, cerebral palsy, hearing impairment, intellectual disability or epilepsy.",
     shortDesc: "Customized nutrition support for autism, ADHD, cerebral palsy, epilepsy, sensory disorders, and developmental conditions.",
@@ -181,7 +183,7 @@ const SERVICES = [
   {
     title: "Oncology Nutrition",
     icon: "Cross",
-    image: img("photo-1576091160399-112ba8d25d1d"),
+    image: "/media/gallery/2024/30-mar-2024-cancer-infertility-roopanagar/20240330-162127-1600.webp",
     category: "specialised",
     forWho: "Patients during and after cancer treatment.",
     shortDesc: "Clinical nutrition support to improve immunity, strength, recovery, and quality of life during cancer treatment.",
@@ -199,7 +201,7 @@ const SERVICES = [
   {
     title: "Sports Nutrition",
     icon: "Dumbbell",
-    image: img("photo-1517836357463-d25dfeac3438"),
+    image: "",
     category: "performance",
     forWho: "Athletes and serious fitness enthusiasts.",
     shortDesc: "Performance nutrition plans for athletes and fitness enthusiasts focusing on energy, recovery, muscle gain, endurance, and body composition.",
@@ -217,7 +219,7 @@ const SERVICES = [
   {
     title: "Nutrigenomics & Gut Health",
     icon: "Dna",
-    image: img("photo-1540420773420-3366772f4999"),
+    image: "",
     category: "performance",
     forWho: "Anyone who wants precision, DNA-based nutrition.",
     shortDesc: "Advanced personalized nutrition based on genetics, gut microbiome analysis, metabolic health, and precision nutrition.",
@@ -240,7 +242,7 @@ const BLOGS = [
     title: "10 Foods That Naturally Boost Your Immunity",
     category: "Immunity",
     tags: ["immunity", "superfoods", "nutrition"],
-    cover: img("photo-1550828520-4cb496926fc9"),
+    cover: "/media/gallery/2021-b-1/nutrition-immunity-and-covid-management-webinar-cro-karnataka-july-2021/nutrition-and-covid-attended-by-almost-80-participants-1600.webp",
     excerpt: "From citrus to mushrooms — discover the evidence-backed foods that keep your immune system strong all year round.",
     content: `<p>Your immune system works around the clock, and the right foods give it the ammunition it needs. Here are the top 10 research-backed foods to include in your weekly diet.</p><h2>1. Citrus Fruits</h2><p>Vitamin C is famous for a reason — it supports the production of white blood cells. Include oranges, lemons, and grapefruit.</p><h2>2. Garlic</h2><p>Garlic's allicin content has been shown to reduce the severity of infections in several studies.</p><h2>3. Ginger</h2><p>A natural anti-inflammatory that helps soothe sore throats and supports digestion.</p><h2>4. Spinach</h2><p>Rich in vitamin C, beta-carotene and antioxidants — lightly cooked so the nutrients stay bioavailable.</p><h2>5. Yogurt</h2><p>Probiotics in yogurt feed healthy gut bacteria, where 70% of your immune system lives.</p><h2>6. Almonds</h2><p>Vitamin E is a fat-soluble antioxidant that protects cell membranes from damage.</p><h2>7. Turmeric</h2><p>Curcumin, turmeric's active compound, is a powerful anti-inflammatory and antioxidant.</p><h2>8. Green Tea</h2><p>Full of flavonoids and the amino acid L-theanine, which may support T-cell function.</p><h2>9. Mushrooms</h2><p>Beta-glucans in mushrooms modulate immune response — shiitake and maitake are excellent choices.</p><h2>10. Papaya</h2><p>Packed with vitamin C, folate and papain, an enzyme that aids digestion.</p><p><strong>Remember:</strong> food is only half the story. Sleep, movement and stress management complete your immune picture.</p>`,
   },
@@ -248,7 +250,7 @@ const BLOGS = [
     title: "The Complete PCOS-Friendly Diet Guide",
     category: "PCOS",
     tags: ["PCOS", "hormones", "women's health"],
-    cover: img("photo-1512621776951-a57141f2eefd"),
+    cover: "/media/gallery/2021-b-1/obesity-myths-and-facts-get-in-depth-understanding-webinar-april-2021-by-golz/obesity-1-1600.webp",
     excerpt: "PCOS affects 1 in 10 women. Learn how strategic food choices can improve insulin sensitivity and balance your hormones.",
     content: `<p>Polycystic Ovary Syndrome is largely an insulin-resistance disorder. That's good news — because it means nutrition has tremendous power to help.</p><h2>Why Insulin Matters</h2><p>When insulin levels run high, the ovaries produce more testosterone, worsening PCOS symptoms. Stabilising insulin is therefore the core of the PCOS diet.</p><h2>What To Eat</h2><ul><li>High-fibre vegetables and legumes</li><li>Lean proteins at every meal</li><li>Healthy fats — nuts, seeds, avocado</li><li>Low-glycemic fruits in moderation</li></ul><h2>What To Limit</h2><ul><li>Refined sugar and white flour</li><li>Sugary beverages</li><li>Highly processed snacks</li></ul><h2>Build Balanced Meals</h2><p>Combining protein, fibre-rich carbohydrates, vegetables and healthy fats on one plate creates meals that satisfy you for longer and help keep blood sugar steady.</p><h2>Timing Matters</h2><p>Eating protein with every meal and avoiding long gaps between meals keeps blood sugar steady.</p><h2>Supplements Worth Discussing</h2><p>Inositol, omega-3 and vitamin D show meaningful benefits in PCOS research — always discuss with your nutritionist before starting.</p><p>Consistency beats perfection. Small, sustainable swaps create real change over time.</p>`,
   },
@@ -256,7 +258,7 @@ const BLOGS = [
     title: "How To Lose Weight Without Losing Energy",
     category: "Weight Loss",
     tags: ["weight loss", "energy", "metabolism"],
-    cover: img("photo-1517836357463-d25dfeac3438"),
+    cover: "",
     excerpt: "Crash diets leave you exhausted. Here's how to create a calorie deficit while keeping your energy, mood and muscle intact.",
     content: `<p>Most diets fail because they ask you to eat less and suffer more. The science says otherwise — you can lose fat while feeling great.</p><h2>1. Moderate, Not Extreme, Deficit</h2><p>A 300–500 calorie deficit per day is enough to lose 0.5–1 kg weekly without crashing your metabolism.</p><h2>2. Protein At Every Meal</h2><p>Protein protects muscle, keeps you full and costs more energy to digest. Aim for 1.6–2.2 g per kg of body weight.</p><h2>3. Don't Skip Carbs</h2><p>Complex carbs fuel your brain and workouts. Focus on whole grains, fruits and vegetables.</p><h2>4. Move Daily</h2><p>NEAT — non-exercise activity like walking — burns more calories than most people realise.</p><h2>5. Sleep Is Non-Negotiable</h2><p>Sleep deprivation raises ghrelin and lowers leptin, driving hunger. Prioritise 7–8 hours.</p><p>Weight loss is a marathon, not a sprint. Build habits you can keep for life.</p>`,
   },
@@ -264,7 +266,7 @@ const BLOGS = [
     title: "The Balanced Plate: Portion Control Made Simple",
     category: "Nutrition",
     tags: ["portion control", "balanced diet"],
-    cover: img("photo-1504674900247-0877df9cc836"),
+    cover: "/media/gallery/2020/invited-program-to-wcd-7th-sep-2020/pictures-of-the-program-wcd-1600.webp",
     excerpt: "No weighing scales required — the simple plate method helps you build balanced meals anywhere.",
     content: `<p>Portion control doesn't need a kitchen scale. The plate method is visual, flexible and works for every cuisine.</p><h2>Half The Plate: Vegetables</h2><p>Fill half your plate with non-starchy vegetables — colour equals nutrients.</p><h2>Quarter: Lean Protein</h2><p>Chicken, fish, eggs, paneer, tofu or legumes — about the size of your palm.</p><h2>Quarter: Whole Grains</h2><p>Rice, roti, quinoa or millets — roughly a closed fist.</p><h2>Don't Forget The Thumb</h2><p>Healthy fats — oil, ghee, nuts — about a thumb's worth per meal.</p><h2>Why It Works</h2><p>The method naturally balances macros, controls calories and prevents the "clean plate club" trap.</p><p>Use the plate method for one week and watch your portions transform.</p>`,
   },
@@ -272,7 +274,7 @@ const BLOGS = [
     title: "Diabetes And Diet: What Actually Works",
     category: "Diabetes",
     tags: ["diabetes", "blood sugar", "diet"],
-    cover: img("photo-1490645935967-10de6ba17061"),
+    cover: "/media/gallery/2019/one-day-workshop-enteral-nutrition-in-the-critically-dec-2019/pic-2-1600.webp",
     excerpt: "Blood-sugar friendly eating isn't about eliminating carbs — it's about choosing the right ones at the right time.",
     content: `<p>Diabetes management through diet is often misunderstood. Let's separate fact from fad.</p><h2>Carbs Aren't The Enemy</h2><p>The type, amount and timing of carbohydrates matter far more than avoiding them entirely.</p><h2>Choose Low-GI Staples</h2><p>Switch white rice for brown rice or millets, white bread for whole grain, and add legumes to every meal — fibre slows sugar absorption.</p><h2>The Order Of Eating</h2><p>Research shows eating protein and vegetables before carbohydrates significantly blunts post-meal blood sugar spikes.</p><h2>Portion Discipline</h2><p>Consistent portion sizes at consistent times help stabilise daily glucose patterns.</p><h2>What To Watch</h2><ul><li>Hidden sugars in sauces and packaged foods</li><li>Sweetened beverages — the worst offenders</li><li>"Diet" foods that spike glucose anyway</li></ul><p>Pair your nutrition plan with regular monitoring and your doctor's guidance.</p>`,
   },
@@ -280,7 +282,7 @@ const BLOGS = [
     title: "Eating Right During Pregnancy: A Trimester Guide",
     category: "Pregnancy",
     tags: ["pregnancy", "prenatal", "maternal health"],
-    cover: img("photo-1546069901-ba9599a7e63c"),
+    cover: "/media/gallery/2017/aiish-nov-2017/childrens-days-camp-to-celebrate-childrens-day-aiish-1600.webp",
     excerpt: "From folate in the first trimester to iron and calcium later — here's how your nutrition needs evolve through pregnancy.",
     content: `<p>Nutrition during pregnancy shapes both maternal health and foetal development. Here's what changes in each trimester.</p><h2>First Trimester</h2><p>Focus on folate (400–800 mcg), ginger for nausea, and small frequent meals. Your calorie needs barely change — quality matters more than quantity.</p><h2>Second Trimester</h2><p>Calorie needs rise by roughly 300 kcal. Prioritise iron (with vitamin C for absorption), calcium and protein-rich foods.</p><h2>Third Trimester</h2><p>Omega-3 DHA supports baby's brain development. Watch sodium for swelling, and eat fibre-rich foods to combat constipation.</p><h2>Foods To Avoid</h2><ul><li>Raw or undercooked meat and eggs</li><li>Unpasteurised dairy</li><li>High-mercury fish</li><li>Excess caffeine (limit to 200 mg/day)</li></ul><p>Every pregnancy is unique — always pair your plan with your obstetrician's guidance.</p>`,
   },
@@ -334,7 +336,7 @@ const HOMEPAGE = {
   heroSubtitle:
     "Science-backed, personalized nutrition plans designed to improve your health without giving up the foods you love. Online and in-clinic consultations available.",
   heroBadge: "Personalized Nutrition Care Since 2015",
-  heroImage: img("photo-1490645935967-10de6ba17061"),
+  heroImage: "/media/gallery/2019/one-day-workshop-enteral-nutrition-in-the-critically-dec-2019/pic-2-1600.webp",
   heroPortrait: "/hero-banner.png",
   ctaPrimary: { label: "Book a Consultation", link: "/contact" },
   ctaSecondary: { label: "Explore Services", link: "/services" },
@@ -377,7 +379,7 @@ const HOMEPAGE = {
     subtitle: "Book your consultation today and get a plan designed around you.",
     buttonLabel: "Book Now",
     buttonLink: "/contact",
-    image: img("photo-1512621776951-a57141f2eefd"),
+    image: "/media/gallery/2021-b-1/obesity-myths-and-facts-get-in-depth-understanding-webinar-april-2021-by-golz/obesity-1-1600.webp",
   },
 };
 
@@ -473,7 +475,7 @@ const SEO = {
   metaDescription:
     "Dr. Sushma Appaiah's GOLZ — science-backed, personalized nutrition plans in Mysuru for weight, diabetes, thyroid, PCOS, pregnancy, children & special needs. Online & in-clinic consultations.",
   keywords: "nutritionist Mysuru, dietitian Mysuru, diabetes diet, PCOS diet, thyroid nutrition, special child nutrition, pregnancy diet, weight loss program",
-  ogImage: img("photo-1512621776951-a57141f2eefd"),
+  ogImage: "/media/gallery/2021-b-1/obesity-myths-and-facts-get-in-depth-understanding-webinar-april-2021-by-golz/obesity-1-1600.webp",
   favicon: "",
 };
 
