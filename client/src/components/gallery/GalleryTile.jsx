@@ -44,12 +44,14 @@ export default function GalleryTile({ item, index, onOpen }) {
         ) : (
           <>
             <img
-              src={item.image}
+              src={item.thumb || item.image}
+              srcSet={item.srcSet || undefined}
+              sizes={item.srcSet ? item.sizes || undefined : undefined}
               alt={item.alt || heading}
               loading="lazy"
               decoding="async"
-              width="800"
-              height="600"
+              width={item.width || 800}
+              height={item.height || 600}
               onLoad={() => setState("ready")}
               onError={() => setState("failed")}
               className={`h-full w-full object-cover transition-all duration-700 ease-out motion-reduce:transform-none group-hover:scale-105 ${

@@ -10,7 +10,9 @@ export default function GalleryNotice({ onRetry, busy = false }) {
     >
       <p className="flex items-start gap-2.5 text-sm leading-relaxed text-ink/80">
         <WifiOff size={17} className="mt-0.5 shrink-0 text-honey" aria-hidden="true" />
-        <span>Showing our saved gallery while we reconnect. Every photo below is from the GOLZ archive.</span>
+        <span>
+          Showing the full GOLZ photo library. Recently uploaded extras may take a moment to appear while we reconnect.
+        </span>
       </p>
 
       {onRetry ? (

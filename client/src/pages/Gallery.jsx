@@ -10,7 +10,7 @@ import GalleryFilters from "../components/gallery/GalleryFilters";
 import GalleryGrid from "../components/gallery/GalleryGrid";
 import GalleryNotice from "../components/gallery/GalleryNotice";
 import GalleryEmptyState from "../components/gallery/GalleryEmptyState";
-import { LOADING_BUDGET_MS, loadGallery, loadFallbackItems } from "../gallery/galleryApi";
+import { archiveItems, deriveSections, loadGallery, compareFolders } from "../gallery/galleryApi";
 import { eventTypesIn } from "../gallery/eventTypes";
 
 const SEO_TITLE = "Gallery | GOLZ \u2013 Giggles of Livez";
@@ -20,9 +20,14 @@ const SEO_DESCRIPTION =
 const CANONICAL = typeof window !== "undefined" ? `${window.location.origin}/gallery` : "";
 
 export default function Gallery() {
-  const [items, setItems] = useState(null);
-  const [sections, setSections] = useState([]);
-  const [live, setLive] = useState(false);
+  /* The photo library is bundled with the app, so the grid is populated on the
+     very first render: no skeletons, no empty state, and nothing to wait for.
+     CMS records are merged in afterwards when the request resolves. */
+  const [items, setItems] = useState(() => archiveItems());
+  const [sections, setSections] = useState(() => deriveSections(archiveItems()));
+  /* "pending" until the CMS request settles, so the notice only ever appears
+     after a real failure and never flashes while a request is still in flight. */
+  const [adminState, setAdminState] = useState("pending");
   const [retrying, setRetrying] = useState(false);
   const [section, setSection] = useState("All");
   const [type, setType] = useState("All");
@@ -31,8 +36,6 @@ export default function Gallery() {
 
   useEffect(() => {
     let alive = true;
-    setItems(null);
-    setLive(false);
     setRetrying(true);
 
     loadGallery().then(({ items: loaded, sections: loadedSections, source: origin, error }) => {
@@ -40,35 +43,12 @@ export default function Gallery() {
       setRetrying(false);
       setItems(loaded);
       setSections(loadedSections);
-      setLive(origin === "api");
-      if (error) console.error("[gallery] live gallery unavailable, using bundled snapshot:", error.message);
+      setAdminState(origin === "api" ? "live" : "fallback");
+      if (error) console.error("[gallery] live gallery unavailable, using bundled archive:", error.message);
     });
-
-    /* Skeletons run once at most: if the API stays silent past the budget we
-       swap in the bundled snapshot rather than spinning forever. */
-    const budget = setTimeout(async () => {
-      if (!alive) return;
-      const snapshot = await loadFallbackItems();
-      if (!alive) return;
-      setItems((current) => current ?? snapshot);
-      setSections((current) =>
-        current.length
-          ? current
-          : [...new Set(snapshot.map((i) => i.section))]
-              .sort()
-              .map((name, index) => ({
-                name,
-                title: name,
-                order: index + 1,
-                published: true,
-                count: snapshot.filter((i) => i.section === name).length,
-              }))
-      );
-    }, LOADING_BUDGET_MS);
 
     return () => {
       alive = false;
-      clearTimeout(budget);
     };
   }, [attempt]);
 
@@ -93,14 +73,39 @@ export default function Gallery() {
     });
   }, [items, section, type]);
 
-  const loading = items === null;
-  const isEmpty = !loading && items.length === 0;
-  /* `live` tracks what is actually on screen, not what the request returned, so
-     the notice appears the moment the bundled snapshot is shown. */
-  const showNotice = !loading && !isEmpty && !live;
+  const isEmpty = items.length === 0;
+  /* Shown only after the CMS half actually failed. The archive is bundled, so
+     the visitor is never left without the full library. */
+  const showNotice = !isEmpty && adminState === "fallback";
+
+  /* Photos are laid out as year sections, and each year as its events, so a
+     visitor can find a specific occasion instead of scrolling one long wall.
+     Every tile keeps its position in the flat list, which is what the lightbox
+     walks through, so next/previous follow the same order the page shows. */
+  const groups = useMemo(() => {
+    const bySection = new Map();
+
+    filtered.forEach((item, flatIndex) => {
+      if (!bySection.has(item.section)) bySection.set(item.section, new Map());
+      const events = bySection.get(item.section);
+      if (!events.has(item.eventName)) events.set(item.eventName, []);
+      events.get(item.eventName).push({ ...item, flatIndex });
+    });
+
+    return [...bySection.keys()]
+      .sort(compareFolders)
+      .map((section) => {
+        const events = [...bySection.get(section).entries()];
+        return {
+          section,
+          count: events.reduce((total, [, list]) => total + list.length, 0),
+          events: events.map(([event, items]) => ({ event, items })),
+        };
+      });
+  }, [filtered]);
 
   const stats = useMemo(() => {
-    if (loading || !items.length) return [];
+    if (!items.length) return [];
     const years = new Set(items.map((i) => i.year).filter(Boolean));
     const events = new Set(items.map((i) => i.eventName).filter(Boolean));
     return [
@@ -109,14 +114,20 @@ export default function Gallery() {
       { value: years.size, label: "Years archived" },
       { value: sections.length, label: "Collections" },
     ];
-  }, [items, sections.length, loading]);
+  }, [items, sections.length]);
 
   const openViewer = useCallback((index) => setViewer({ items: filtered, index }), [filtered]);
   const navigate = useCallback((index) => setViewer((v) => (v ? { ...v, index } : v)), []);
 
   /* A real photo from the archive, so the social card shows the actual gallery
-     instead of an empty tag. Falls back to leaving the tag unset. */
-  const ogImage = useMemo(() => items?.find((i) => i.type === "image" && i.image)?.image, [items]);
+     instead of an empty tag. The index stores site-relative paths, and social
+     crawlers need a full URL, so the origin is added back here. */
+  const ogImage = useMemo(() => {
+    const path = items?.find((i) => i.type === "image")?.image;
+    if (!path) return undefined;
+    if (/^https?:\/\//i.test(path)) return path;
+    return typeof window !== "undefined" ? `${window.location.origin}${path}` : undefined;
+  }, [items]);
 
   return (
     <>
@@ -148,15 +159,13 @@ export default function Gallery() {
                 id="gallery-heading"
                 className="mt-3 font-heading text-3xl font-semibold leading-tight text-ink sm:text-4xl lg:text-[42px] lg:leading-[1.12]"
               >
-                {loading
-                  ? "Loading the archive"
-                  : isEmpty
-                    ? "Nothing to show yet"
-                    : `${filtered.length} ${filtered.length === 1 ? "photograph" : "photographs"}`}
+                {isEmpty
+                  ? "Nothing to show yet"
+                  : `${filtered.length} ${filtered.length === 1 ? "photograph" : "photographs"}`}
               </h2>
             </div>
 
-            {!loading && !isEmpty ? (
+            {!isEmpty ? (
               <p className="max-w-md text-sm leading-relaxed text-muted">
                 Real moments from our workshops, talks, hospital programmes and community events. Select any photo to
                 view it full size.
@@ -183,9 +192,37 @@ export default function Gallery() {
               <div className="mt-10">
                 {showNotice ? <GalleryNotice onRetry={retry} busy={retrying} /> : null}
 
-                <GalleryGrid items={filtered} loading={loading} onOpen={openViewer} />
+                {groups.map((group) => (
+                  <section
+                    key={group.section}
+                    id={`gallery-${group.section.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                    aria-labelledby={`gallery-${group.section.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`}
+                    className="mb-14 last:mb-0"
+                  >
+                    <div className="mb-6 flex items-baseline gap-3 border-b border-line pb-3">
+                      <h3
+                        id={`gallery-${group.section.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-heading`}
+                        className="font-heading text-2xl font-semibold tracking-tight text-ink sm:text-3xl"
+                      >
+                        {group.section}
+                      </h3>
+                      <span className="text-sm font-semibold text-muted">
+                        {group.count} {group.count === 1 ? "photo" : "photos"}
+                      </span>
+                    </div>
 
-                {!loading && filtered.length === 0 ? (
+                    {group.events.map((event) => (
+                      <div key={event.event} className="mb-9 last:mb-0">
+                        {group.events.length > 1 ? (
+                          <h4 className="mb-4 font-heading text-base font-semibold text-primary">{event.event}</h4>
+                        ) : null}
+                        <GalleryGrid items={event.items} onOpen={openViewer} />
+                      </div>
+                    ))}
+                  </section>
+                ))}
+
+                {filtered.length === 0 ? (
                   <div className="mt-10 rounded-[22px] border border-line bg-white px-6 py-14 text-center">
                     <p className="font-heading text-lg font-semibold text-ink">No photos match this combination</p>
                     <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">

@@ -1,4 +1,8 @@
 import api from "../api/client";
+/* Bundled with the application rather than fetched at runtime: the photo library
+   is the primary content, so it must be present in the first paint and must not
+   depend on a second request succeeding. */
+import manifest from "../data/galleryManifest.json";
 
 const REQUEST_TIMEOUT_MS = 9000;
 /** Bounded loading: past this the page stops showing skeletons. */
@@ -40,6 +44,173 @@ export function toGalleryItem(raw, index = 0) {
 
 export function toGalleryItems(list) {
   return (list || []).map(toGalleryItem).filter(Boolean);
+}
+
+/* --------------------------------------------------------- archive library */
+
+/**
+ * Normalises one entry from the build-generated index into the same shape as a
+ * CMS record, so every downstream component (grid, tile, lightbox, filters)
+ * works unchanged no matter which source an item came from.
+ *
+ * The generated file is the single source of truth for the photo library: it is
+ * produced by `scripts/generate-gallery-index.mjs` at build time, which is why
+ * adding a photo to the archive needs no code change and no manual list.
+ */
+export function toArchiveItem(entry, index = 0) {
+  if (!entry || typeof entry !== "object") return null;
+
+  /* Manifest paths may or may not carry a leading slash; normalise to exactly
+     one so no request is ever made for "//gallery/...". */
+  const sitePath = (value) => `/${text(value).replace(/^\/+/, "")}`;
+
+  const full = text(entry.src);
+  const thumb = text(entry.thumb);
+  if (!full) return null;
+
+  const folder = text(entry.folder) || "Gallery";
+  const event = text(entry.event) || folder;
+
+  const srcSet = text(entry.srcSet)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `${sitePath(part.split(/\s+/)[0])} ${part.split(/\s+/).slice(1).join(" ")}`)
+    .filter((part) => part.split(/\s+/).length === 2)
+    .join(", ");
+
+  return {
+    id: text(entry.id) || `archive-${index}`,
+    image: sitePath(full),
+    thumb: thumb ? sitePath(thumb) : sitePath(full),
+    srcSet,
+    sizes: text(entry.sizes),
+    width: Number(entry.width) || undefined,
+    height: Number(entry.height) || undefined,
+    type: "image",
+    section: folder,
+    sectionId: "",
+    /* Only folders that begin with a year get a year badge; "Other" does not. */
+    year: /^(\d{4})/.exec(folder)?.[1] || "",
+    eventName: event,
+    caption: text(entry.caption),
+    hasOwnCaption: Boolean(text(entry.caption)) && text(entry.caption) !== event,
+    alt: text(entry.alt) || text(entry.caption) || event,
+    order: Number.isFinite(index) ? index : 0,
+    /* Original archive path, kept only so duplicates can be recognised. */
+    sourceFile: text(entry.file) || text(entry.source).split("/").pop() || "",
+    origin: "archive",
+  };
+}
+
+/** The generated index, mapped once and reused. */
+let archiveCache = null;
+export function archiveItems() {
+  if (!archiveCache) {
+    /* Raw manifest entries go straight to `toArchiveItem`: they are a different
+       shape from CMS records and must not be normalised as CMS records first. */
+    archiveCache = (manifest?.images || []).map((entry, index) => toArchiveItem(entry, index)).filter(Boolean);
+  }
+  return archiveCache;
+}
+
+export function loadArchiveItems() {
+  return Promise.resolve(archiveItems());
+}
+
+/* -------------------------------------------------------- deduplication */
+
+/**
+ * Reduces a caption to a comparable signature.
+ *
+ * The CMS importer derived captions from filenames and appended "(1)", "(2)",
+ * "001" or "-copy" suffixes, so those are removed first. Separators, spacing,
+ * case and "&"/"and" are then ignored, which is what lets
+ * "NCED Feb - 2018 certificate (1)" match "NCED Feb 2018 Certificate".
+ */
+const signature = (value) =>
+  text(value)
+    .replace(/\((?:copy|img|image|photo|file)?\s*\d*\)/gi, " ")
+    .replace(/\bcopy\b/gi, " ")
+    .replace(/&/g, " and ")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+
+/** Filename at the end of a URL or a manifest `folder/file.jpg` path. */
+const basenameOf = (value) => decodeURIComponent(text(value).split("?")[0].split("/").pop() || "");
+
+/**
+ * Records written by the old archive importer were uploaded under this blob
+ * prefix. They are re-uploads of photos the generated index already serves from
+ * the original files, so they are dropped by location alone — a check that
+ * cannot misfire on an administrator's own upload.
+ */
+const LEGACY_ARCHIVE_PATH = /\/gallery\/archive\//i;
+
+/**
+ * Merges the generated archive index with CMS records.
+ *
+ * The archive is authoritative for the photo library, so a CMS record is dropped
+ * when it is a re-upload of an archive photo, detected either by the legacy
+ * import path or by matching the original filename/caption in the same folder.
+ *
+ * Both checks are deliberately one-directional and per-photo: archive entries are
+ * never dropped, and event names are never used as a match key, so a genuine
+ * new upload added to an existing event still appears.
+ */
+export function mergeGallery(archive = [], admin = []) {
+  const covered = new Set();
+  for (const item of archive) {
+    covered.add(`${item.section}::${signature(item.sourceFile)}`);
+    covered.add(`${item.section}::${signature(item.caption)}`);
+  }
+
+  const extra = admin.filter((item) => {
+    if (LEGACY_ARCHIVE_PATH.test(text(item.image))) return false;
+    const file = signature(basenameOf(item.image));
+    return !covered.has(`${item.section}::${file}`) && !covered.has(`${item.section}::${signature(item.caption)}`);
+  });
+
+  /* Sorted to match the order the page renders — newest year first, then event,
+     then file. The lightbox walks this same list, so pressing "next" moves to
+     the photo the visitor is looking at rather than jumping around the archive. */
+  return [...archive, ...extra].sort(
+    (a, b) =>
+      compareFolders(a.section, b.section) ||
+      (a.eventName || "").localeCompare(b.eventName || "", undefined, { numeric: true }) ||
+      String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+  );
+}
+
+/** Newest year first, and the unfiled folder last. */
+const folderRank = (folder) => {
+  const match = /^(\d{4})/.exec(folder);
+  return match ? Number(match[1]) : -1;
+};
+
+const compareFolders = (a, b) => folderRank(b) - folderRank(a) || a.localeCompare(b, undefined, { numeric: true });
+
+export { compareFolders, folderRank };
+
+/**
+ * Builds filter sections from whatever is actually on screen, so a year can
+ * never be listed with a count of zero and a populated year can never be
+ * missing from the bar.
+ */
+export function deriveSections(items = [], apiSections = []) {
+  const labels = new Map(
+    apiSections.filter((s) => s?.name).map((s) => [s.name, { title: s.title || s.name, published: s.published !== false }])
+  );
+
+  const counts = new Map();
+  for (const item of items) counts.set(item.section, (counts.get(item.section) || 0) + 1);
+
+  return [...counts.keys()].sort(compareFolders).map((name) => ({
+    name,
+    title: labels.get(name)?.title || name,
+    published: labels.has(name) ? labels.get(name).published : true,
+    count: counts.get(name),
+  }));
 }
 
 export const titleOf = (item) => item?.eventName || item?.year || "Gallery";
@@ -125,15 +296,11 @@ async function requestWithRetry(path, attempts = 2) {
 }
 
 /**
- * Loads the gallery in one request.
- *
- * PRIMARY  : GET /public/gallery — items, sections and categories together.
- * FALLBACK : the bundled snapshot of the same CMS records.
- *
- * Returns items plus the source so the page can show a small notice without
- * ever replacing real content. The fallback never writes to the database.
+ * Fetches the CMS half of the gallery on its own: live records first, bundled
+ * snapshot if the API is unreachable or empty. Kept separate from
+ * `loadGallery` so an admin outage can never cost the visitor the archive.
  */
-export async function loadGallery() {
+async function loadAdminItems() {
   try {
     const { data } = await requestWithRetry("/public/gallery?page=1&limit=200");
 
@@ -161,26 +328,43 @@ export async function loadGallery() {
 
     return { items, sections, categories, source: "api", error: null };
   } catch (err) {
-    const fallback = await loadFallbackItems();
-    /* Derive sections from the snapshot so the filter bar still works offline. */
-    const derivedSections = [...new Set(fallback.map((i) => i.section))]
-      .sort()
-      .map((name, index) => ({
-        name,
-        title: name,
-        description: "",
-        cover: "",
-        order: index + 1,
-        published: true,
-        count: fallback.filter((i) => i.section === name).length,
-      }));
-
     return {
-      items: fallback,
-      sections: derivedSections,
-      categories: derivedSections.map((s) => s.name),
+      items: await loadFallbackItems(),
+      sections: extractSections(null),
+      categories: [],
       source: "fallback",
       error: err,
     };
   }
+}
+
+/**
+ * Loads the whole gallery.
+ *
+ * ARCHIVE : the build-generated index — every photo in `public/`, always present,
+ *           needs no database and cannot be broken by an outage.
+ * ADMIN   : CMS records for anything uploaded or curated through the admin,
+ *           fetched live with the bundled snapshot as a backup.
+ *
+ * The two are merged by `mergeGallery`, which drops CMS duplicates of archive
+ * photos. `source` reports which admin channel answered so the page can show a
+ * small notice without ever hiding real content, and the fallback never writes
+ * to the database.
+ */
+export async function loadGallery() {
+  const [archive, admin] = await Promise.all([loadArchiveItems(), loadAdminItems()]);
+
+  const items = mergeGallery(archive, admin.items);
+  const sections = deriveSections(items, admin.sections);
+
+  /* Only the admin half can be missing; the archive is bundled with the build. */
+  return {
+    items,
+    sections,
+    categories: admin.categories,
+    source: admin.source,
+    error: admin.error,
+    archiveCount: archive.length,
+    adminCount: items.length - archive.length,
+  };
 }
