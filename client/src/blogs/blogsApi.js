@@ -1,27 +1,29 @@
 import api from "../api/client";
 import { stripHtml } from "../utils/helpers";
+import BLOG_FALLBACK, { BLOG_FALLBACK_CATEGORIES } from "../data/blogsFallback";
 
 /**
  * Blog data layer.
  *
- * The listing used to be read straight off `axios` inside the page, which is
- * what made production look broken: any failed or unexpectedly shaped response
- * collapsed into an empty array, and an empty array is indistinguishable from a
- * genuinely empty blog. The page then rendered "No articles yet." next to a
- * large blank area with no error anywhere.
+ * The public blog is local-first. `data/blogsFallback.js` is a generated,
+ * read-only snapshot of the published articles, so the listing is available
+ * synchronously at first paint: there is no spinner, no empty flash and no
+ * dependency on a network request that might be cold, slow or failing. A
+ * visitor is never told the blog failed, because the blog cannot fail to load.
  *
- * Everything here is defensive on purpose:
+ * The CMS is still the source of truth. When `/public/blogs` answers, its
+ * response replaces the snapshot so admin edits appear immediately; when it
+ * does not, the page simply keeps rendering the snapshot. Neither path shows an
+ * error, a retry button or an offline banner, because from a visitor's point of
+ * view there is nothing to recover from.
+ *
+ * Everything below is defensive on purpose:
  *  - the payload is accepted as `{ items }`, `{ posts }`, `{ data }` or a bare
  *    array, because an API returning a different envelope must not silently
  *    empty the page;
  *  - a malformed entry is dropped instead of reaching a card that renders `undefined`;
  *  - categories fall back to the ones present in the articles, so the filter
- *    still works if the endpoint stops sending them;
- *  - a request is retried once, because a cold serverless start is the most
- *    common cause of a one-off failure and it is not a real error.
- *
- * Nothing here bundles a copy of the articles: the blog is edited from the
- * admin panel, so a snapshot would go stale and could contradict the database.
+ *    still works if the endpoint stops sending them.
  */
 
 const REQUEST_TIMEOUT = 12000;
@@ -124,6 +126,40 @@ function byNewest(a, b) {
   return left < right ? 1 : -1;
 }
 
+/**
+ * The bundled articles, normalised once.
+ *
+ * This is what the page renders on its very first frame. It is exported so the
+ * UI can show real articles before any request has been made.
+ */
+export const LOCAL_POSTS = BLOG_FALLBACK.map(normalizePost)
+  .filter(Boolean)
+  .sort(byNewest);
+
+export const LOCAL_CATEGORIES = uniqueStrings(
+  BLOG_FALLBACK_CATEGORIES.length ? BLOG_FALLBACK_CATEGORIES : LOCAL_POSTS.map((post) => post.category)
+);
+
+/** The listing exactly as it should appear before — and without — the CMS call. */
+export function localListing() {
+  return { ok: true, posts: LOCAL_POSTS, categories: LOCAL_CATEGORIES, error: null, source: "local" };
+}
+
+/** Looks an article up in the snapshot, so a slug always resolves offline. */
+export function localPost(slug) {
+  return LOCAL_POSTS.find((post) => post.slug === slug) || null;
+}
+
+/** Related articles from the snapshot, preferring the same category. */
+export function localRelated(slug) {
+  const current = localPost(slug);
+  const sameCategory = LOCAL_POSTS.filter(
+    (post) => post.slug !== slug && (!current || post.category === current.category)
+  );
+  const others = LOCAL_POSTS.filter((post) => post.slug !== slug);
+  return (sameCategory.length ? sameCategory : others).slice(0, 3);
+}
+
 function uniqueStrings(list) {
   const seen = new Set();
   const out = [];
@@ -139,16 +175,14 @@ function uniqueStrings(list) {
 }
 
 /**
- * Reads the published articles.
+ * Refreshes the article list from the CMS.
  *
- * Resolves with a result object rather than rejecting, because "the request
- * failed" is a state the page has to render, not an exception it should crash
- * on. `ok: false` means the database could not be reached; `ok: true` with an
- * empty list means there genuinely are no published articles.
+ * Always resolves with a usable listing. If the CMS answers, its records are
+ * used so admin edits appear at once; if it does not, the bundled snapshot is
+ * returned instead. There is no failure state to render, because the page can
+ * always show real articles.
  */
 export async function fetchBlogs({ limit = 100, retries = 1 } = {}) {
-  let lastError = null;
-
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const { data } = await api.get("/public/blogs", {
@@ -157,19 +191,19 @@ export async function fetchBlogs({ limit = 100, retries = 1 } = {}) {
       });
 
       const { list, ok: readable } = extractCollection(data);
-      if (!readable) {
-        throw Object.assign(new Error("Unrecognised response shape"), { shapeMismatch: true });
-      }
+      if (!readable) throw Object.assign(new Error("Unrecognised response shape"), { shapeMismatch: true });
 
       const posts = list.map(normalizePost).filter(Boolean).sort(byNewest);
+      /* An empty or unusable response must not replace a good snapshot. */
+      if (!posts.length) throw new Error("CMS returned no usable articles");
+
       const fromApi = toArray(data?.categories).map((c) => String(c || "").trim());
       /* Fall back to the categories actually present, otherwise the filter row
          would be empty while articles are on screen. */
       const categories = uniqueStrings(fromApi.length ? fromApi : posts.map((post) => post.category));
 
-      return { ok: true, posts, categories, error: null };
+      return { ok: true, posts, categories, error: null, source: "cms" };
     } catch (err) {
-      lastError = err;
       const status = err?.response?.status;
       /* A 4xx other than a timeout will not fix itself, so retrying only wastes
          the visitor's time. */
@@ -180,39 +214,51 @@ export async function fetchBlogs({ limit = 100, retries = 1 } = {}) {
     }
   }
 
-  const status = lastError?.response?.status ?? 0;
-  const message = lastError?.shapeMismatch
-    ? "The articles service returned an unexpected response. Please try again."
-    : status === 503
-      ? "The content service is briefly unavailable."
-      : status
-        ? "We could not reach the articles just now."
-        : "You appear to be offline.";
-
-  console.error("[blogs] listing request failed:", lastError?.message || "unknown error");
-  return { ok: false, posts: [], categories: [], error: new Error(message) };
+  /* Kept as a developer signal only. Nothing is shown to the visitor: the page
+     is already rendering the bundled articles. */
+  console.warn("[blogs] CMS list unavailable, serving the bundled articles.");
+  return localListing();
 }
 
-/** Reads one published article. A missing slug is a real 404, not a failure. */
+/**
+ * Reads one article.
+ *
+ * The CMS is preferred so edits and view counts stay live, but a slug always
+ * resolves: if the request fails the bundled copy is used, and only a slug that
+ * exists in neither is reported as missing.
+ */
 export async function fetchBlogBySlug(slug) {
   try {
     const { data } = await api.get(`/public/blogs/${encodeURIComponent(slug)}`, { timeout: REQUEST_TIMEOUT });
-    return { ok: true, post: normalizePost(data), error: null };
+    const post = normalizePost(data);
+    if (post) return { ok: true, post, error: null, source: "cms" };
   } catch (err) {
-    if (err?.response?.status === 404) return { ok: false, post: null, notFound: true, error: null };
-    console.error("[blogs] article request failed:", err?.message || "unknown error");
-    return { ok: false, post: null, notFound: false, error: new Error("We could not load this article.") };
+    if (err?.response?.status === 404) {
+      const bundled = localPost(slug);
+      /* A slug the CMS deleted but the snapshot still holds is still a real
+         article, so it keeps working. */
+      if (bundled) return { ok: true, post: bundled, error: null, source: "local" };
+      return { ok: false, post: null, notFound: true, error: null };
+    }
+    const bundled = localPost(slug);
+    if (bundled) return { ok: true, post: bundled, error: null, source: "local" };
+    return { ok: false, post: null, notFound: false, error: new Error("unavailable") };
   }
+  const bundled = localPost(slug);
+  if (bundled) return { ok: true, post: bundled, error: null, source: "local" };
+  return { ok: false, post: null, notFound: true, error: null };
 }
 
 /** Related articles are a nice-to-have: a failure must not break the article. */
 export async function fetchRelated(slug) {
   try {
     const { data } = await api.get(`/public/blogs/${encodeURIComponent(slug)}/related`, { timeout: REQUEST_TIMEOUT });
-    return toArray(data).map(normalizePost).filter(Boolean).slice(0, 3);
+    const fromApi = toArray(data).map(normalizePost).filter(Boolean).slice(0, 3);
+    if (fromApi.length) return fromApi;
   } catch {
-    return [];
+    /* fall through to the snapshot */
   }
+  return localRelated(slug);
 }
 
 /**

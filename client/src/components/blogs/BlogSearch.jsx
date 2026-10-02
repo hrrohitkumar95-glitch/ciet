@@ -6,7 +6,7 @@ import { Search, X } from "lucide-react";
  * Matching runs in the browser over the articles already on screen, so typing
  * never issues a request; the count is announced politely for screen readers.
  */
-export default function BlogSearch({ value, onChange, resultCount, loading = false }) {
+export default function BlogSearch({ value, onChange, resultCount }) {
   return (
     <div className="mx-auto w-full max-w-2xl">
       <label htmlFor="blog-search" className="sr-only">
@@ -36,7 +36,7 @@ export default function BlogSearch({ value, onChange, resultCount, loading = fal
       </div>
 
       <p className="mt-3 text-center text-sm text-muted" aria-live="polite">
-        {loading ? "Loading articles…" : `${resultCount} ${resultCount === 1 ? "article" : "articles"}`}
+        {`${resultCount} ${resultCount === 1 ? "article" : "articles"}`}
       </p>
     </div>
   );

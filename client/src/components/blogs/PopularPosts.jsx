@@ -12,7 +12,7 @@ import { coverAt, coverSrcSet } from "../../blogs/blogsApi";
  * labelled with the ordering it really uses. Inventing a popularity ranking
  * from an arbitrary sort would be dishonest.
  */
-export default function PopularPosts({ posts = [], tracked = false, loading = false }) {
+export default function PopularPosts({ posts = [], tracked = false }) {
   const items = posts.slice(0, 4);
   const heading = tracked ? "Most Read" : "Latest Articles";
   const Icon = tracked ? TrendingUp : CalendarDays;
@@ -24,19 +24,7 @@ export default function PopularPosts({ posts = [], tracked = false, loading = fa
         {heading}
       </h2>
 
-      {loading ? (
-        <ul className="mt-5 space-y-5" aria-hidden="true">
-          {[0, 1, 2].map((i) => (
-            <li key={i} className="flex gap-3.5">
-              <div className="h-16 w-20 shrink-0 animate-pulse rounded-xl bg-line motion-reduce:animate-none" />
-              <div className="flex-1 space-y-2 py-1">
-                <div className="h-3 w-full animate-pulse rounded-full bg-line motion-reduce:animate-none" />
-                <div className="h-3 w-3/4 animate-pulse rounded-full bg-line motion-reduce:animate-none" />
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <p className="mt-4 text-sm leading-relaxed text-muted">
           No articles to show yet. New insights are on the way.
         </p>

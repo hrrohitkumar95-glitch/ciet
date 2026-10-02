@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-02T05:55:25.380Z",
+  "generatedAt": "2026-10-02T11:10:09.386Z",
   "widths": [
     800,
     1600
@@ -2244,38 +2244,6 @@
       "srcSet": "/media/gallery/2024/roopanagar-independens-day-15th-aug-2024/independents-day-15-aug-2024-flyer-800.webp 800w, /media/gallery/2024/roopanagar-independens-day-15th-aug-2024/independents-day-15-aug-2024-flyer-1600.webp 1600w",
       "sizes": "(min-width: 1280px) 22vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw",
       "aspect": 1.3333
-    },
-    {
-      "id": "other/other/screenshot-2026-08-01-134512",
-      "source": "Screenshot 2026-08-01 134512.png",
-      "folder": "Other",
-      "event": "Other",
-      "file": "Screenshot 2026-08-01 134512.png",
-      "caption": "Other — Photo 1",
-      "alt": "Other, photo 1",
-      "width": 828,
-      "height": 830,
-      "thumb": "media/gallery/other/other/screenshot-2026-08-01-134512-800.webp",
-      "src": "media/gallery/other/other/screenshot-2026-08-01-134512-1600.webp",
-      "srcSet": "/media/gallery/other/other/screenshot-2026-08-01-134512-800.webp 800w, /media/gallery/other/other/screenshot-2026-08-01-134512-1600.webp 1600w",
-      "sizes": "(min-width: 1280px) 22vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw",
-      "aspect": 0.9976
-    },
-    {
-      "id": "other/other/screenshot-2026-08-01-134724",
-      "source": "Screenshot 2026-08-01 134724.png",
-      "folder": "Other",
-      "event": "Other",
-      "file": "Screenshot 2026-08-01 134724.png",
-      "caption": "Other — Photo 2",
-      "alt": "Other, photo 2",
-      "width": 647,
-      "height": 866,
-      "thumb": "media/gallery/other/other/screenshot-2026-08-01-134724-800.webp",
-      "src": "media/gallery/other/other/screenshot-2026-08-01-134724-1600.webp",
-      "srcSet": "/media/gallery/other/other/screenshot-2026-08-01-134724-800.webp 800w, /media/gallery/other/other/screenshot-2026-08-01-134724-1600.webp 1600w",
-      "sizes": "(min-width: 1280px) 22vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw",
-      "aspect": 0.7471
     }
   ]
 }

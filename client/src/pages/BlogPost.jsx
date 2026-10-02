@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Tag } from "lucide-react";
 import SEO from "../components/SEO";
@@ -7,40 +7,38 @@ import BlogArticleContent from "../components/blogs/BlogArticleContent";
 import ShareArticle from "../components/blogs/ShareArticle";
 import AuthorCard from "../components/blogs/AuthorCard";
 import RelatedArticles from "../components/blogs/RelatedArticles";
-import { fetchBlogBySlug, fetchRelated, coverAt, coverSrcSet } from "../blogs/blogsApi";
+import { fetchBlogBySlug, fetchRelated, localPost, localRelated, coverAt, coverSrcSet } from "../blogs/blogsApi";
 import { stripHtml } from "../utils/helpers";
 
 /**
  * Single article.
  *
- * Three states are kept apart on purpose: still loading, genuinely missing
- * (a 404, which is a real answer), and temporarily unreachable. Only the last
- * one offers a retry, because retrying a slug that does not exist is pointless.
+ * The bundled snapshot resolves the slug synchronously, so an article is
+ * readable on the first frame and there is no loading or retry state. A CMS
+ * refresh still runs in the background and swaps in the newest copy when it
+ * answers, but the page never waits for it.
+ *
+ * Only two states remain: the article, or a real 404. A slug that the snapshot
+ * does not hold renders the 404 immediately rather than spinning on a request
+ * that may never arrive; if the CMS does know the article it replaces the 404
+ * in place as soon as it responds.
  */
 export default function BlogPost() {
   const { slug } = useParams();
-  const [status, setStatus] = useState("loading"); // loading | ready | missing | failed
-  const [blog, setBlog] = useState(null);
-  const [related, setRelated] = useState([]);
-  const [attempt, setAttempt] = useState(0);
+  const [status, setStatus] = useState(() => (localPost(slug) ? "ready" : "missing")); // ready | missing
+  const [blog, setBlog] = useState(() => localPost(slug));
+  const [related, setRelated] = useState(() => localRelated(slug));
 
   useEffect(() => {
     let active = true;
-    setStatus("loading");
-    setBlog(null);
-    setRelated([]);
+    const bundled = localPost(slug);
+    setBlog(bundled);
+    setRelated(localRelated(slug));
+    setStatus(bundled ? "ready" : "missing");
     window.scrollTo({ top: 0 });
 
     fetchBlogBySlug(slug).then((result) => {
-      if (!active) return;
-      if (result.notFound) {
-        setStatus("missing");
-        return;
-      }
-      if (!result.post) {
-        setStatus("failed");
-        return;
-      }
+      if (!active || !result.post) return;
       setBlog(result.post);
       setStatus("ready");
 
@@ -52,11 +50,9 @@ export default function BlogPost() {
     return () => {
       active = false;
     };
-  }, [slug, attempt]);
+  }, [slug]);
 
-  const retry = useCallback(() => setAttempt((n) => n + 1), []);
-
-  if (status === "missing" || (status === "ready" && !blog)) {
+  if (status === "missing" || !blog) {
     return (
       <>
         <SEO
@@ -76,44 +72,6 @@ export default function BlogPost() {
           </Link>
         </div>
       </>
-    );
-  }
-
-  if (status === "failed") {
-    return (
-      <>
-        <SEO fullTitle="Article unavailable | GOLZ" description="This article could not be loaded." noindex />
-        <div className="container-x py-32 text-center sm:py-40">
-          <h1 className="font-heading text-3xl font-semibold text-ink sm:text-4xl">This article did not load</h1>
-          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted">
-            The connection was interrupted. Your article is still there — try loading it again.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <button type="button" onClick={retry} className="btn-primary !py-3.5 !text-base">
-              Try again
-            </button>
-            <Link to="/blogs" className="btn-outline !py-3.5 !text-base">
-              Back to Blogs
-            </Link>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (status === "loading" || !blog) {
-    return (
-      <div className="container-x py-32 sm:py-40" aria-busy="true" aria-live="polite">
-        <span className="sr-only">Loading article…</span>
-        <div className="mx-auto max-w-3xl space-y-4" aria-hidden="true">
-          <div className="h-4 w-28 animate-pulse rounded-full bg-line motion-reduce:animate-none" />
-          <div className="h-10 w-full animate-pulse rounded-2xl bg-line motion-reduce:animate-none" />
-          <div className="h-10 w-3/4 animate-pulse rounded-2xl bg-line motion-reduce:animate-none" />
-          <div className="aspect-video w-full animate-pulse rounded-[24px] bg-line motion-reduce:animate-none" />
-          <div className="h-4 w-full animate-pulse rounded-full bg-line motion-reduce:animate-none" />
-          <div className="h-4 w-11/12 animate-pulse rounded-full bg-line motion-reduce:animate-none" />
-        </div>
-      </div>
     );
   }
 

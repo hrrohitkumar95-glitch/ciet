@@ -1,10 +1,8 @@
 import api from "../api/client";
 import SERVICES_FALLBACK from "../data/servicesFallback";
 
-/** A request must never outlive this, or the page would hang on a slow API. */
+/** A request must never outlive this, or the refresh would hang in the background. */
 const REQUEST_TIMEOUT_MS = 8000;
-/** Bounded loading: past this the page stops showing skeletons. */
-export const LOADING_BUDGET_MS = 6000;
 
 const asText = (value) => (typeof value === "string" ? value.trim() : "");
 const asList = (value) =>
@@ -79,6 +77,11 @@ const withTimeout = (promise) =>
  * content synchronously if the API is slower than the loading budget.
  */
 export const FALLBACK_SERVICES = SERVICES_FALLBACK.map(normaliseService).filter(Boolean);
+
+/** Looks one service up in the bundled catalogue, so a slug always resolves offline. */
+export function localService(slug) {
+  return FALLBACK_SERVICES.find((service) => service.slug === slug) || null;
+}
 
 async function requestWithRetry(path, attempts = 2) {
   let lastError;

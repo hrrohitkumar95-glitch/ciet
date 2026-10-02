@@ -9,30 +9,32 @@ import BlogFeatured from "../components/blogs/BlogFeatured";
 import BlogCard from "../components/blogs/BlogCard";
 import BlogGrid from "../components/blogs/BlogGrid";
 import BlogSidebar from "../components/blogs/BlogSidebar";
-import { fetchBlogs, orderPopular } from "../blogs/blogsApi";
+import { fetchBlogs, localListing, orderPopular } from "../blogs/blogsApi";
 
 const PAGE_SIZE = 9;
 
 /**
  * Blog listing.
  *
- * One request serves the whole page. The previous version asked the API twice
- * (a listing call and a separate "popular" call) and then, if either failed,
- * quietly stored an empty array — which is why production could show a
- * headline, a "Popular Posts / No articles yet." sidebar and a large blank
- * grid with no error anywhere.
+ * Articles come from the bundled snapshot first, so the very first paint already
+ * contains real article cards — there is no skeleton, no empty flash and no
+ * request to wait on. A CMS refresh then runs in the background and swaps in
+ * newer records when it answers.
  *
- * Filtering, searching and paging are all client-side over that single payload,
- * so switching category is instant and never re-hits the database.
+ * Because the page always has articles, there is no error state, no retry button
+ * and no "reconnecting" message: a failed CMS call is invisible, since the
+ * snapshot already shows the same library.
+ *
+ * Filtering, searching and paging are all client-side over that single list, so
+ * switching category is instant and never re-hits the database.
  */
 export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [status, setStatus] = useState("loading"); // loading | ready | failed
-  const [posts, setPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [error, setError] = useState(null);
-  const [attempt, setAttempt] = useState(0);
+  /* Seeded synchronously: the listing is never empty on first render. */
+  const [initial] = useState(localListing);
+  const [posts, setPosts] = useState(initial.posts);
+  const [categories, setCategories] = useState(initial.categories);
 
   const [query, setQuery] = useState(() => searchParams.get("search") || "");
   const [category, setCategory] = useState(() => searchParams.get("category") || "All");
@@ -41,29 +43,26 @@ export default function Blog() {
   /* Used to tell "the user typed" apart from "the URL changed". */
   const filterChange = useRef(null);
 
+  /* Background refresh only: it may replace the list, but it can never empty it. */
   useEffect(() => {
     let active = true;
-    setStatus("loading");
-    setError(null);
 
     fetchBlogs().then((result) => {
-      if (!active) return;
+      if (!active || !result.posts.length) return;
       setPosts(result.posts);
       setCategories(result.categories);
-      setError(result.error);
-      setStatus(result.ok ? "ready" : "failed");
     });
 
     return () => {
       active = false;
     };
-  }, [attempt]);
+  }, []);
 
   /* A category that no longer exists would silently hide every article. */
   useEffect(() => {
-    if (status !== "ready" || !categories.length) return;
+    if (!categories.length) return;
     if (category !== "All" && !categories.includes(category)) setCategory("All");
-  }, [status, categories, category]);
+  }, [categories, category]);
 
   /* Search and category live in the URL so a filtered view can be shared. */
   useEffect(() => {
@@ -123,10 +122,8 @@ export default function Blog() {
 
   const popular = useMemo(() => orderPopular(posts), [posts]);
   const hasFilters = Boolean(query.trim()) || category !== "All";
-  const loading = status === "loading";
   const shown = rest.slice(0, visible);
 
-  const retry = () => setAttempt((n) => n + 1);
   const canonical = typeof window !== "undefined" ? `${window.location.origin}/blogs` : "";
 
   return (
@@ -158,8 +155,8 @@ export default function Blog() {
 
       <section className="border-b border-line bg-white py-10 sm:py-12">
         <div className="container-x">
-          <BlogSearch value={query} onChange={onQueryChange} resultCount={filtered.length} loading={loading} />
-          {!loading && categories.length ? (
+          <BlogSearch value={query} onChange={onQueryChange} resultCount={filtered.length} />
+          {categories.length ? (
             <div className="mt-8">
               <BlogCategories categories={categories} active={category} onChange={onCategoryChange} />
             </div>
@@ -171,17 +168,13 @@ export default function Blog() {
         <div className="container-x">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
             <div>
-              {loading ? (
-                <BlogGrid posts={[]} loading />
-              ) : status === "failed" ? (
-                <BlogGrid posts={[]} error={error?.message} onRetry={retry} />
-              ) : featured ? (
+              {featured ? (
                 <Reveal>
                   <BlogFeatured blog={featured} />
                 </Reveal>
               ) : null}
 
-              {!loading && status !== "failed" && rest.length ? (
+              {rest.length ? (
                 <>
                   <div className="mb-6 flex items-baseline justify-between gap-4 border-b border-line pb-3">
                     <h2 className="font-heading text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
@@ -214,20 +207,21 @@ export default function Blog() {
                 </>
               ) : null}
 
-              {/* Only when there is nothing at all. With a single article the
-                  lead story is the whole list, so an empty-state message here
-                  would contradict the article shown directly above it. */}
-              {!loading && status !== "failed" && !featured ? (
+              {/* Only when there is genuinely nothing to show: either nothing matched the
+                  filters, or the bundled library itself is empty. With a single
+                  article the lead story is the whole list, so an empty-state
+                  message here would contradict the article shown above it. */}
+              {!featured ? (
                 <BlogGrid posts={[]} hasFilters={hasFilters} />
               ) : null}
             </div>
 
-            <BlogSidebar posts={popular.posts} tracked={popular.tracked} loading={loading} />
+            <BlogSidebar posts={popular.posts} tracked={popular.tracked} />
           </div>
         </div>
       </section>
 
-      {!loading && status === "ready" && posts.length ? (
+      {posts.length ? (
         <section className="bg-section-sage section-pad">
           <div className="container-x text-center">
             <h2 className="font-heading text-3xl font-semibold text-ink sm:text-4xl">

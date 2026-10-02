@@ -6,30 +6,34 @@ import SEO from "../components/SEO";
 import PageHero from "../components/PageHero";
 import { useSite } from "../context/SiteContext";
 import { ICON_MAP } from "../utils/helpers";
-import { loadService } from "../services/servicesApi";
+import { loadService, localService } from "../services/servicesApi";
 
-/* Individual service detail view — /services/:slug */
+/**
+ * Individual service detail view — /services/:slug
+ *
+ * The bundled catalogue resolves the slug synchronously, so the page renders
+ * immediately and a failed CMS call simply keeps that copy. There is no
+ * loading gate and no reconnect message: from the visitor's point of view there
+ * is nothing to recover from.
+ */
 export default function ServiceDetail() {
   const { slug } = useParams();
   const { site } = useSite();
-  const [service, setService] = useState(null);
-  const [notFound, setNotFound] = useState(false);
-  const [fromFallback, setFromFallback] = useState(false);
+  const [service, setService] = useState(() => localService(slug));
+  const [notFound, setNotFound] = useState(() => !localService(slug));
 
   useEffect(() => {
     let alive = true;
-    setNotFound(false);
-    setService(null);
-    setFromFallback(false);
+    setService(localService(slug));
+    setNotFound(!localService(slug));
     window.scrollTo({ top: 0 });
 
-    loadService(slug).then(({ service: item, source, error }) => {
+    loadService(slug).then(({ service: item, error }) => {
       if (!alive) return;
       if (item) {
         setService(item);
-        setFromFallback(source === "fallback");
-        if (error) console.error(`[service:${slug}] live record unavailable, using bundled copy:`, error.message);
-      } else {
+        if (error) console.warn(`[service:${slug}] CMS record unavailable, serving the bundled copy:`, error.message);
+      } else if (!localService(slug)) {
         setNotFound(true);
       }
     });
@@ -86,14 +90,6 @@ export default function ServiceDetail() {
       />
 
       <PageHero title={service.title} subtitle={service.shortDesc} breadcrumb={["Services", service.title]} image={service.image} />
-
-      {fromFallback ? (
-        <div className="container-x pt-8">
-          <p role="status" className="rounded-[18px] border border-honey/40 bg-honey/10 px-5 py-4 text-sm leading-relaxed text-ink/80">
-            Showing our saved details for this service while we reconnect. Booking below works as normal.
-          </p>
-        </div>
-      ) : null}
 
       <section className="section-pad pt-0">
         <div className="container-x grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
