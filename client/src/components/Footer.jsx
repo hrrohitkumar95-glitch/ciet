@@ -46,7 +46,7 @@ export default function Footer() {
           <ul className="space-y-2.5 text-sm">
             {[
               ["Home", "/"], ["About Us", "/about"], ["Services", "/services"],
-              ["Gallery", "/gallery"], ["Blog", "/blog"], ["Book Consultation", "/contact"],
+              ["Gallery", "/gallery"], ["Blogs", "/blogs"], ["Book Consultation", "/contact"],
             ].map(([label, to]) => (
               <li key={to}>
                 <Link to={to} className="inline-flex items-center gap-1.5 transition hover:text-lime">

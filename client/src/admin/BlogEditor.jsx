@@ -69,7 +69,7 @@ export default function BlogEditor() {
           </Link>
           <div>
             <h2 className="font-heading text-lg font-bold text-charcoal">{id ? "Edit Post" : "New Post"}</h2>
-            <p className="text-xs text-charcoal/50">Slug: /blog/{blog.slug || "auto-generated"}</p>
+            <p className="text-xs text-charcoal/50">Slug: /blogs/{blog.slug || "auto-generated"}</p>
           </div>
         </div>
         <div className="flex gap-2.5">
