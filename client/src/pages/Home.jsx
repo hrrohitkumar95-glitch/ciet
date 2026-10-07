@@ -471,7 +471,7 @@ export default function Home() {
         <div className="container-x">
           <SectionHeading
             eyebrow="Gallery"
-            title="Moments From Precious Moments"
+            title="Our journey - Precious moments"
             subtitle="Recipes, workshops, events and real client transformations."
           />
           <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
