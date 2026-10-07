@@ -418,10 +418,14 @@ const ABOUT = {
     "19 years in personalised nutrition counselling",
   ],
   recognition: [
-    "DST Women Scientist Awardee — Govt. of India",
-    "Most Innovative Nutrition Counsellor of the Year — New Delhi",
-    "Women Achiever Entrepreneur, Impacting Global Health — Ministry of Science & Technology (IISF 2020)",
-    "Changemaker Award — for serving 800+ COVID patients and frontline workers",
+    "Karnataka Pride Award for remarkable achievements & transformative contributions",
+    "Women Achiever entrepreneur from Academia",
+    "Changemaker Award Feb/2022 by Aryan Institute",
+    "Awarded women achiever entrepreneur impacting Global health",
+    "Most Innovative Nutrition counsellor of the year 2019-20",
+    "Special Recognition for Innovative food formulations",
+    "DST Women Scientist Awardee",
+    "Won awards for best research presentations",
   ],
   recognitionFootnote: "…among 10+ national and international honours.",
   beyondClinic:
