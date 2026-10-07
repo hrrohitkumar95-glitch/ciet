@@ -213,7 +213,7 @@ export default function About() {
         <div className="container-x">
           <SectionHeading
             eyebrow="What She Helps With"
-            title="A Practice Built Around You"
+            title="A food platter scientifically curated for you"
             subtitle="From metabolic conditions to family nutrition, every area of her work follows the same principle — nutrition that is personal."
           />
           <div className="grid gap-6 lg:grid-cols-2">
@@ -281,7 +281,7 @@ export default function About() {
       {/* ================= CREDENTIALS ================= */}
       <section className="section-pad">
         <div className="container-x">
-          <SectionHeading eyebrow="Credentials" title="Formally Trained, Practically Experienced" />
+          <SectionHeading eyebrow="Credentials" title="Professionally trained with practical expertise" />
           <div className="grid gap-5 sm:grid-cols-2">
             {credentials.map((c, i) => (
               <Reveal key={c} delay={(i % 2) * 0.08}>
@@ -303,7 +303,7 @@ export default function About() {
           <SectionHeading
             eyebrow="Recognition"
             title="Honoured For Impact Beyond The Clinic"
-            subtitle="National and international recognition for her work in research, innovation and community health."
+            subtitle="National and international recognition for her work in research, Reversal of disease, innovation and community health."
           />
           <div className="grid gap-5 sm:grid-cols-2">
             {recognition.map((r, i) => (
@@ -330,7 +330,7 @@ export default function About() {
             <SectionHeading
               center={false}
               eyebrow="Beyond The Clinic"
-              title="Shaping How Nutrition Is Taught In India"
+              title="Nurturing Nutrition academically"
             />
             <p className="text-base leading-relaxed text-ink/75">{beyondClinic}</p>
             <div className="mt-8 flex flex-wrap items-center gap-2.5">
