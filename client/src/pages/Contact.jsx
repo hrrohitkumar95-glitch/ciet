@@ -9,9 +9,23 @@ import SEO from "../components/SEO";
 import PageHero from "../components/PageHero";
 import { useSite } from "../context/SiteContext";
 
+/* The page degrades badly without these: an empty `workingHours` array would
+   render a bare "Govt Holidays" row and a missing `mapEmbed` would silently
+   drop the map. Both ship as defaults so the consultation page always shows
+   hours and a clinic map, with the CMS values winning once they load. */
+const FALLBACK_WORKING_HOURS = [
+  { day: "Monday – Saturday", hours: "10:30 AM – 5:00 PM" },
+  { day: "Sunday", hours: "Closed" },
+];
+
+const FALLBACK_MAP =
+  "https://maps.google.com/maps?q=Bogadi%20Main%20Road%20Mysuru%20Karnataka%20570026&t=&z=14&ie=UTF8&iwloc=&output=embed";
+
 export default function Contact() {
   const { site } = useSite();
   const g = site.general || {};
+  const workingHours = g.workingHours?.length ? g.workingHours : FALLBACK_WORKING_HOURS;
+  const whatsapp = g.whatsapp || "919342674406";
   const [params] = useSearchParams();
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
@@ -34,7 +48,7 @@ export default function Contact() {
       `Preferred Time: ${values.preferredTime}`,
     ];
     if (values.message) lines.push(`Message: ${values.message}`);
-    window.open(`https://wa.me/${g.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+    window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
     reset({ service: "" });
   };
 
@@ -53,8 +67,8 @@ export default function Contact() {
           <div className="mb-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { Icon: MapPin, title: "Clinic Address", lines: [g.address || "@Kshema Healthcare, #338, Bogadi Main Road, Bogadi, Mysuru 570026"] },
-              { Icon: Phone, title: "Call Us", lines: [g.phone || "+91 98765 43210"] },
-              { Icon: Mail, title: "Email Us", lines: [g.email || "hello@nutrixwellness.in"] },
+              { Icon: Phone, title: "Call Us", lines: [g.phone || "+91 934-267-4406"] },
+              { Icon: Mail, title: "Email Us", lines: [g.email || "nutrigolz@gmail.com"] },
               { Icon: MessageCircle, title: "WhatsApp", lines: ["Chat with us instantly"] },
             ].map(({ Icon, title, lines }, i) => (
               <motion.div key={title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="card p-6 text-center">
@@ -150,8 +164,8 @@ export default function Contact() {
                   <Clock size={18} className="text-primary" />
                 </div>
                 <div className="divide-y divide-gray-50 px-6">
-                  {(g.workingHours || []).map((w) => (
-                    <p key={w.day} className="flex justify-between py-3.5 text-sm">
+                  {workingHours.map((w, i) => (
+                    <p key={`${w.day}-${i}`} className="flex justify-between py-3.5 text-sm">
                       <span className="text-charcoal/70">{w.day}</span>
                       <span className={`font-semibold ${w.hours === "Closed" ? "text-accent" : "text-primary"}`}>{w.hours}</span>
                     </p>
@@ -163,16 +177,20 @@ export default function Contact() {
                 </div>
               </div>
 
-              {g.mapEmbed && (
-                <div className="mb-8 overflow-hidden rounded-3xl shadow-card">
-                  <iframe src={g.mapEmbed} title="Clinic location" loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="h-[490px] w-full border-0" />
-                </div>
-              )}
+              <div className="mb-8 overflow-hidden rounded-3xl shadow-card">
+                <iframe
+                  src={g.mapEmbed || FALLBACK_MAP}
+                  title="Clinic location"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-[490px] w-full border-0"
+                />
+              </div>
 
               <div className="rounded-3xl bg-gradient-to-br from-primary to-primary-dark p-7 text-white shadow-lift">
                 <h3 className="mb-2 font-heading text-lg font-bold">Prefer WhatsApp?</h3>
                 <p className="mb-4 text-sm text-white/80">Message us anytime — we'll get back to you within working hours.</p>
-                <a href={`https://wa.me/${g.whatsapp}`} target="_blank" rel="noopener noreferrer" className="btn-gold !bg-white !text-primary">
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="btn-gold !bg-white !text-primary">
                   <MessageCircle size={17} /> Chat on WhatsApp
                 </a>
               </div>
