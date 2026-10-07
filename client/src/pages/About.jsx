@@ -48,32 +48,134 @@ function CountUp({ value, suffix = "" }) {
 
 const HELP_ICONS = [Sparkles, HeartPulse, Baby];
 
+/* Bundled copy of the About payload. The CMS values always win, but these keep
+   the story, helps-with, specialisation, credentials, recognition and
+   beyond-the-clinic sections populated if the request never lands. */
+const FB = {
+  heroTitle: "About Dr. Sushma Appaiah",
+  name: "Dr. Sushma Appaiah",
+  designation: "Founder & Nutrition Scientist, GOLZ",
+  image: "/doctor-portrait.png",
+  experienceYears: 19,
+  story:
+    "Dr. Sushma Appaiah is the Founder of GOLZ (Giggles of Livez) and a distinguished nutrition scientist with 19 years of experience in clinical nutrition, corporate wellness, and health counselling. She holds a Ph.D. in Food Science & Technology from CSIR-CFTRI, Mysore, and an M.Sc. in Food & Nutrition (2nd Rank) from the University of Mysore. Over the years, she has helped clients across 13 countries achieve sustainable health through evidence-based nutrition and personalized care.",
+  approach:
+    "Since founding GOLZ in Mysore in 2015, she's grown it into two centres serving clients across 13 countries — but the philosophy has never changed: nutrition should be personal. She doesn't hand out generic meal charts. She reads your body — your condition, your labs, even your genetics through nutrigenomics — and builds a plan that fits your life. Over the years, that approach has helped thousands reverse diabetes, manage PCOS and thyroid issues, recover from illness, and simply feel better.",
+  helpGroups: [
+    {
+      title: "Metabolic & Lifestyle",
+      items: [
+        "Diabetes reversal",
+        "PCOS",
+        "Thyroid",
+        "Weight management",
+        "Onco (cancer recovery)",
+        "Sports nutrition",
+        "Stress & mental wellbeing",
+      ],
+    },
+    {
+      title: "Life-stage & Family",
+      items: ["Pregnancy, GDM & lactation", "Autism & ADHD child nutrition", "Nutrigenomics"],
+    },
+  ],
+  specialNeeds: {
+    heading: "Nutrition for children with special needs",
+    text: "Specialised child nutrition is at the heart of Dr. Sushma's work — she's delivered over 3,000 diet plans for children with autism, ADHD, and developmental needs, through institutions like AIISH (Mysore) and early-intervention school programs. Certified in Autism & ADHD Nutrition Therapy (Cambridge International Institute, UK), she builds gentle, practical plans that work with a child's sensitivities, not against them.",
+    stat: {
+      value: 3000,
+      suffix: "+",
+      label: "diet plans delivered for children with special needs",
+    },
+    credibility: "Certified in Autism & ADHD Nutrition Therapy, Level 1 & 2 — Cambridge International Institute, UK",
+    ctaLabel: "Book a consultation for your child",
+  },
+  credentials: [
+    "Ph.D, Food Science & Technology — CSIR-CFTRI, Mysore",
+    "M.Sc, Food & Nutrition (2nd Rank) — University of Mysore",
+    "Advanced Nutrigenomics Expert — Genebox Academy",
+    "Autism & ADHD Nutrition Therapy, Level 1 & 2 — Cambridge International Institute, UK",
+    "19 years in personalised nutrition counselling",
+  ],
+  recognition: [
+    "DST Women Scientist Awardee — Govt. of India",
+    "Most Innovative Nutrition Counsellor of the Year — New Delhi",
+    "Women Achiever Entrepreneur, Impacting Global Health — Ministry of Science & Technology (IISF 2020)",
+    "Changemaker Award — for serving 800+ COVID patients and frontline workers",
+  ],
+  recognitionFootnote: "…among 10+ national and international honours.",
+  beyondClinic:
+    "Beyond her practice, Dr. Sushma shapes how nutrition is taught in India. She's developed UGC-approved nutrition programs, convenes the Indian Dietetics Association's Mysore chapter, has delivered 250+ invited talks, published 15+ peer-reviewed papers, and — during the pandemic — coordinated nutrition training for 20,000+ Anganwadi and ASHA workers across the country.",
+  affiliations: "AFSTI · Indian Dietetics Association (IDA) · Indian Nutritional Medical Association (INMA)",
+  mission:
+    "To make evidence-based nutrition simple, accessible and enjoyable — so every client can achieve lasting health without deprivation or fad diets.",
+  vision: "A world where personalized nutrition is the first line of defence against lifestyle disease, not the last resort.",
+  stats: [
+    { value: 19, suffix: "+", label: "Years Experience" },
+    { value: 15000, suffix: "+", label: "Programs Completed" },
+    { value: 5000, suffix: "+", label: "Diet Plans Delivered" },
+    { value: 3000, suffix: "+", label: "Plans for Special Kids" },
+  ],
+};
+
+const str = (v, f) => (typeof v === "string" && v.trim() ? v : f);
+const arr = (v, f) => (Array.isArray(v) && v.length ? v : f);
+
 export default function About() {
   const { site } = useSite();
   const a = site.about || {};
   const seo = site.seo || {};
-  const sn = a.specialNeeds || {};
+
+  const heroTitle = str(a.heroTitle, FB.heroTitle);
+  const name = str(a.name, FB.name);
+  const designation = str(a.designation, FB.designation);
+  const image = str(a.image, FB.image);
+  const experienceYears = Number(a.experienceYears) > 0 ? Number(a.experienceYears) : FB.experienceYears;
+  const story = str(a.story, FB.story);
+  const approach = str(a.approach, FB.approach);
+  const helpGroups = arr(a.helpGroups, FB.helpGroups);
+  const credentials = arr(a.credentials, FB.credentials);
+  const recognition = arr(a.recognition, FB.recognition);
+  const recognitionFootnote = str(a.recognitionFootnote, FB.recognitionFootnote);
+  const beyondClinic = str(a.beyondClinic, FB.beyondClinic);
+  const affiliations = str(a.affiliations, FB.affiliations);
+  const mission = str(a.mission, FB.mission);
+  const vision = str(a.vision, FB.vision);
+  const stats = arr(a.stats, FB.stats);
+
+  const s = a.specialNeeds || {};
+  const sn = {
+    heading: str(s.heading, FB.specialNeeds.heading),
+    text: str(s.text, FB.specialNeeds.text),
+    credibility: str(s.credibility, FB.specialNeeds.credibility),
+    ctaLabel: str(s.ctaLabel, FB.specialNeeds.ctaLabel),
+    stat: {
+      value: Number(s.stat?.value) > 0 ? Number(s.stat.value) : FB.specialNeeds.stat.value,
+      suffix: str(s.stat?.suffix, FB.specialNeeds.stat.suffix),
+      label: str(s.stat?.label, FB.specialNeeds.stat.label),
+    },
+  };
 
   return (
     <>
       <SEO
         title="About"
-        description={a.story || a.bio}
-        image={a.image}
+        description={story}
+        image={image}
         keywords={seo.keywords}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "Person",
-          name: a.name,
-          jobTitle: a.designation,
-          description: a.story || a.bio,
+          name,
+          jobTitle: designation,
+          description: story,
         }}
       />
       <PageHero
-        title={a.heroTitle || "About Dr. Sushma Appaiah"}
-        subtitle={`${a.name} — ${a.designation}`}
+        title={heroTitle}
+        subtitle={`${name} — ${designation}`}
         breadcrumb={["About"]}
-        image={a.image}
+        image={image}
       />
 
       {/* ================= STORY ================= */}
@@ -82,24 +184,24 @@ export default function About() {
           <Reveal className="relative order-2 lg:order-1">
             <div className="absolute -left-5 top-5 h-40 w-40 rounded-3xl bg-sage/60" />
             <div className="absolute -bottom-6 -right-6 h-44 w-44 rounded-full bg-lime/15 blur-2xl" />
-            {a.image && (
-              <img src={a.image} alt={a.name} className="relative z-10 h-[360px] w-full rounded-[180px_180px_22px_22px] object-cover shadow-lift sm:h-[500px] lg:h-[600px]" loading="lazy" />
+            {image && (
+              <img src={image} alt={name} className="relative z-10 h-[360px] w-full rounded-[180px_180px_22px_22px] object-cover shadow-lift sm:h-[500px] lg:h-[600px]" loading="lazy" />
             )}
             <div className="glass absolute -bottom-7 left-10 z-20 rounded-[18px] px-7 py-4 shadow-card">
-              <p className="font-heading text-2xl font-semibold text-primary">{a.experienceYears || 19}+</p>
+              <p className="font-heading text-2xl font-semibold text-primary">{experienceYears}+</p>
               <p className="text-xs text-muted">Years of Experience</p>
             </div>
           </Reveal>
           <div className="order-1 lg:order-2">
-            <SectionHeading center={false} eyebrow="The Story" title={a.name || "Your Nutritionist"} />
+            <SectionHeading center={false} eyebrow="The Story" title={name || "Your Nutritionist"} />
             <div className="mt-5 space-y-4 text-base leading-relaxed text-ink/75">
-              {(a.story || "").split(/\n{2,}/).map((para) => (
+              {story.split(/\n{2,}/).map((para) => (
                 <p key={para.slice(0, 24)}>{para}</p>
               ))}
             </div>
             <p className="mt-6 rounded-[18px] border border-line bg-sage/50 p-6 text-[15px] leading-relaxed text-ink/75">
               <Quote size={20} className="mb-2 text-primary" />
-              {a.approach}
+              {approach}
             </p>
           </div>
         </div>
@@ -114,7 +216,7 @@ export default function About() {
             subtitle="From metabolic conditions to family nutrition, every area of her work follows the same principle — nutrition that is personal."
           />
           <div className="grid gap-6 lg:grid-cols-2">
-            {(a.helpGroups || []).map((group, gi) => {
+            {helpGroups.map((group, gi) => {
               const Icon = HELP_ICONS[gi % HELP_ICONS.length];
               return (
                 <Reveal key={group.title} delay={gi * 0.1}>
@@ -150,23 +252,23 @@ export default function About() {
               <HeartPulse size={14} /> Core Specialisation
             </span>
             <h2 className="font-heading text-4xl font-semibold leading-tight text-[#EEF3EA] lg:text-[46px]">
-              {sn.heading || "Nutrition for children with special needs"}
+              {sn.heading}
             </h2>
             <p className="mt-6 text-base leading-relaxed text-[#DBE6D5]/90">{sn.text}</p>
             <p className="mt-8 flex items-start gap-3 rounded-[18px] border border-lime/40 bg-white/5 px-6 py-4 text-sm font-medium leading-relaxed text-[#EEF3EA]">
               <BadgeCheck size={20} className="mt-0.5 shrink-0 text-lime" /> {sn.credibility}
             </p>
             <Link to="/contact" className="btn-gold mt-9 !bg-lime !text-ink hover:!bg-limeDark">
-              {sn.ctaLabel || "Book a consultation for your child"} <ArrowRight size={18} />
+              {sn.ctaLabel} <ArrowRight size={18} />
             </Link>
           </Reveal>
           <Reveal delay={0.15}>
             <div className="rounded-[180px_180px_22px_22px] border border-white/15 bg-white/5 p-10 text-center lg:p-14">
               <p className="font-heading text-7xl font-semibold text-lime">
-                <CountUp value={Number(sn.stat?.value || 3000)} suffix={sn.stat?.suffix || "+"} />
+                <CountUp value={sn.stat.value} suffix={sn.stat.suffix} />
               </p>
               <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-[#A9C0A0]">
-                {sn.stat?.label || "diet plans delivered for children with special needs"}
+                {sn.stat.label}
               </p>
               <p className="mt-8 text-xs uppercase tracking-widest text-[#9FB4A5]">Through institutions like</p>
               <p className="mt-2 font-heading text-lg font-semibold text-[#EEF3EA]">AIISH, Mysore · Early-intervention school programs</p>
@@ -180,7 +282,7 @@ export default function About() {
         <div className="container-x">
           <SectionHeading eyebrow="Credentials" title="Formally Trained, Practically Experienced" />
           <div className="grid gap-5 sm:grid-cols-2">
-            {(a.credentials || []).map((c, i) => (
+            {credentials.map((c, i) => (
               <Reveal key={c} delay={(i % 2) * 0.08}>
                 <div className="card flex items-start gap-4 p-6">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
@@ -203,7 +305,7 @@ export default function About() {
             subtitle="National and international recognition for her work in research, innovation and community health."
           />
           <div className="grid gap-5 sm:grid-cols-2">
-            {(a.recognition || []).map((r, i) => (
+            {recognition.map((r, i) => (
               <Reveal key={r} delay={(i % 2) * 0.08}>
                 <div className="card flex items-start gap-4 p-6">
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-lime/15 text-limeDark">
@@ -215,7 +317,7 @@ export default function About() {
             ))}
           </div>
           <Reveal className="mt-8 text-center">
-            <p className="text-sm italic text-muted">{a.recognitionFootnote}</p>
+            <p className="text-sm italic text-muted">{recognitionFootnote}</p>
           </Reveal>
         </div>
       </section>
@@ -229,15 +331,14 @@ export default function About() {
               eyebrow="Beyond The Clinic"
               title="Shaping How Nutrition Is Taught In India"
             />
-            <p className="text-base leading-relaxed text-ink/75">{a.beyondClinic}</p>
+            <p className="text-base leading-relaxed text-ink/75">{beyondClinic}</p>
             <div className="mt-8 flex flex-wrap items-center gap-2.5">
               <span className="text-xs font-semibold uppercase tracking-widest text-muted">Life member —</span>
-              {(a.affiliations || "AFSTI · Indian Dietetics Association (IDA) · Indian Nutritional Medical Association (INMA)")
-                .split("·").map((af) => (
-                  <span key={af} className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink/80">
-                    {af.trim()}
-                  </span>
-                ))}
+              {affiliations.split("·").map((af) => (
+                <span key={af} className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink/80">
+                  {af.trim()}
+                </span>
+              ))}
             </div>
           </Reveal>
           <Reveal delay={0.15}>
@@ -246,12 +347,12 @@ export default function About() {
                 <span className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-lime text-ink"><Target size={24} /></span>
                 <h3 className="font-heading text-[19px] font-semibold text-ink">Our Mission</h3>
               </div>
-              <p className="text-sm leading-relaxed text-ink/70">{a.mission}</p>
+              <p className="text-sm leading-relaxed text-ink/70">{mission}</p>
               <div className="mt-8 mb-6 flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary/10 text-primary"><Eye size={24} /></span>
                 <h3 className="font-heading text-[19px] font-semibold text-ink">Our Vision</h3>
               </div>
-              <p className="text-sm leading-relaxed text-ink/70">{a.vision}</p>
+              <p className="text-sm leading-relaxed text-ink/70">{vision}</p>
             </div>
           </Reveal>
         </div>
@@ -261,7 +362,7 @@ export default function About() {
       <section className="section-pad pt-0">
         <div className="container-x">
           <Reveal className="grid grid-cols-2 gap-6 rounded-[24px] bg-primary p-8 shadow-lift sm:gap-8 sm:p-10 lg:grid-cols-4">
-            {(a.stats || []).map((s) => (
+            {stats.map((s) => (
               <div key={s.label} className="text-center">
                 <p className="font-heading text-4xl font-semibold text-lime">
                   <CountUp value={Number(s.value)} suffix={s.suffix} />
