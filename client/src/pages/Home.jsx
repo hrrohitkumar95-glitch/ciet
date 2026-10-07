@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
@@ -15,8 +15,7 @@ import Lightbox, { PlayBadge } from "../components/Lightbox";
 import { archiveItems, loadGallery, withSectionLabels } from "../gallery/galleryApi";
 import { FALLBACK_SERVICES, loadServices } from "../services/servicesApi";
 import { ICON_MAP } from "../utils/helpers";
-
-const TestimonialsSection = lazy(() => import("../components/TestimonialsSection"));
+import TestimonialsSection from "../components/TestimonialsSection";
 
 const TRUST_ICONS = [ShieldCheck, ClipboardList, MonitorSmartphone, FlaskConical, Star];
 
@@ -36,6 +35,42 @@ const FALLBACK_STATS = [
   { value: 15000, suffix: "+", label: "Nutrition & wellness programs completed" },
   { value: 5000, suffix: "+", label: "Personalized diet plans delivered" },
   { value: 3000, suffix: "+", label: "Specialized diet plans for children" },
+];
+
+/* Success Stories returns null on an empty list, so these three published
+   client stories ship with the bundle: the section renders even when the CMS
+   payload never arrives, and the live records replace them once it does. */
+const FALLBACK_TESTIMONIALS = [
+  {
+    _id: "fallback-chandrakala",
+    name: "Chandrakala N",
+    role: "Weight Management Program",
+    rating: 5,
+    photo: "",
+    result: "Lost 2.2 kg & 6 cm off waist in 2 months",
+    text: "I had a very positive experience following the program. Within two months I saw clear and measurable improvements — my weight reduced by 2.2 kg and my waist came down by 6 cm. My body fat percentage and BMI also improved, and my overall InBody score increased. What stood out even more was how I felt — more energetic, lighter, better sleep and almost no leg pain. The approach felt structured and sustainable rather than extreme. I would recommend this to anyone looking for a disciplined and result-oriented plan.",
+    published: true,
+  },
+  {
+    _id: "fallback-geetha",
+    name: "Geetha Murthy",
+    role: "Weight & Body Composition Program",
+    rating: 5,
+    photo: "",
+    result: "Lost 5.8 kg in 3 months",
+    text: "I had an excellent experience with Dr. Sushma Appaiah over the last 3 months. I lost 5.8 kg with major improvements in body fat, waist and hip measurements, visceral fat, and overall body composition. My energy levels are good and my periods remained regular, which shows the diet was healthy and well balanced. The results feel sustainable, not extreme. Truly professional guidance — highly recommend Dr. Sushma Appaiah.",
+    published: true,
+  },
+  {
+    _id: "fallback-shruthi",
+    name: "Shruthi Vinayak",
+    role: "Gut Health & Weight Gain",
+    rating: 5,
+    photo: "",
+    result: "Healthy weight gain & new energy in 3 months",
+    text: "I went to GOLZ with gut issues. Dr. Sushma gave me a diet plan which was not only simple to follow — all the ingredients were from the kitchen and easily available in the market. In just 3 months I saw tremendous change in my health. I was underweight and struggling to gain weight; my weight started increasing and I started feeling more energetic. Along with the diet she gave me pranayama which helped me become more stable emotionally and mentally. It was a complete holistic approach in a natural way. I would recommend GOLZ nutrition to everyone who wants to lead a happy, healthy and peaceful life. Thank you Dr. Sushma from the bottom of my heart.",
+    published: true,
+  },
 ];
 
 function CountUp({ value, suffix = "" }) {
@@ -86,6 +121,7 @@ export default function Home() {
   const { site } = useSite();
   const h = site.homepage || {};
   const seo = site.seo || {};
+  const testimonials = site.testimonials?.length ? site.testimonials : FALLBACK_TESTIMONIALS;
   const { scrollY } = useScroll();
   const parallaxY = useTransform(scrollY, [0, 600], [0, -24]);
   const [heroSrc, setHeroSrc] = useState(
@@ -512,9 +548,7 @@ export default function Home() {
       </section>
 
       {/* ================= TESTIMONIALS ================= */}
-      <Suspense fallback={<section className="bg-primary section-pad" aria-hidden="true" />}>
-        <TestimonialsSection items={site.testimonials} />
-      </Suspense>
+      <TestimonialsSection items={testimonials} />
 
       {/* ================= BOOK CONSULTATION ================= */}
       <BookingSection />
