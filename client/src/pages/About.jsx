@@ -55,7 +55,7 @@ const FB = {
   heroTitle: "About Dr. Sushma Appaiah",
   name: "Dr. Sushma Appaiah",
   designation: "Founder & Nutrition Scientist, GOLZ",
-  image: "/doctor-portrait.png",
+  image: "/doctor-portrait.jpg",
   experienceYears: 19,
   story:
     "Dr. Sushma Appaiah is the Founder of GOLZ (Giggles of Livez) and a distinguished nutrition scientist with 19 years of experience in clinical nutrition, corporate wellness, and health counselling. She holds a Ph.D. in Food Science & Technology from CSIR-CFTRI, Mysore, and an M.Sc. in Food & Nutrition (2nd Rank) from the University of Mysore. Over the years, she has helped clients across 13 countries achieve sustainable health through evidence-based nutrition and personalized care.",

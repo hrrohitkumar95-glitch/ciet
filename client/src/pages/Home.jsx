@@ -333,10 +333,10 @@ export default function Home() {
             </div>
             <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 6 }} className="relative rounded-[180px_180px_22px_22px] border border-white/15 bg-white/5 p-6 sm:p-8">
               <img
-                src={h.aboutPreview?.image || "/doctor-portrait.png"}
+                src={h.aboutPreview?.image || "/doctor-portrait.jpg"}
                 onError={(e) => {
-                  if (e.currentTarget.src.indexOf("/doctor-portrait.png") === -1) {
-                    e.currentTarget.src = "/doctor-portrait.png";
+                  if (e.currentTarget.src.indexOf("/doctor-portrait.jpg") === -1) {
+                    e.currentTarget.src = "/doctor-portrait.jpg";
                   }
                 }}
                 alt="Dr. Sushma Appaiah"
