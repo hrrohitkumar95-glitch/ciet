@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, CalendarCheck, Star, ArrowUpRight, BadgeCheck, Camera,
   Leaf, GraduationCap, Sparkles,
-  ShieldCheck, ClipboardList, MonitorSmartphone, FlaskConical,
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
 import SEO from "../components/SEO";
@@ -16,19 +15,6 @@ import { archiveItems, loadGallery, withSectionLabels } from "../gallery/gallery
 import { FALLBACK_SERVICES, loadServices } from "../services/servicesApi";
 import { ICON_MAP } from "../utils/helpers";
 import TestimonialsSection from "../components/TestimonialsSection";
-
-const TRUST_ICONS = [ShieldCheck, ClipboardList, MonitorSmartphone, FlaskConical, Star];
-
-/* The trust strip must survive an API outage: it is the first thing a visitor
-   reads after the hero, so it renders from these defaults whenever the CMS
-   payload has no trustItems. */
-const FALLBACK_TRUST = [
-  { title: "Certified Nutrition Expert", text: "Ph.D. — CSIR-CFTRI, Mysuru" },
-  { title: "Personalized Plans", text: "Every plan built around your body & goals" },
-  { title: "Online & In-Clinic", text: "Consult from home or visit us in Mysuru" },
-  { title: "Science-Based Nutrition", text: "Every recommendation is evidence-backed" },
-  { title: "Continuous Support", text: "We stay with you until results stick" },
-];
 
 const FALLBACK_STATS = [
   { value: 20, suffix: "+", label: "Years of science-backed nutrition care" },
@@ -283,26 +269,6 @@ export default function Home() {
             </motion.div>
           </div>
         </div>
-      </section>
-
-      {/* ================= TRUST ================= */}
-      <section className="container-x relative z-20 -mt-14">
-        <Reveal className="card grid grid-cols-2 gap-6 rounded-3xl p-8 shadow-lift sm:grid-cols-3 lg:grid-cols-5">
-          {(h.trustItems?.length ? h.trustItems : FALLBACK_TRUST).map((t, i) => {
-            const TrustIcon = TRUST_ICONS[i % TRUST_ICONS.length];
-            return (
-              <motion.div key={t.title} whileHover={{ y: -6 }} className="group flex flex-col items-center gap-3 text-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
-                  <TrustIcon size={26} />
-                </span>
-                <div>
-                  <p className="font-heading text-sm font-semibold text-charcoal">✓ {t.title}</p>
-                  <p className="mt-0.5 text-xs text-charcoal/50">{t.text}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </Reveal>
       </section>
 
       {/* ================= STATISTICS ================= */}
