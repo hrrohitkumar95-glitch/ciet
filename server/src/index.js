@@ -150,6 +150,15 @@ export async function bootstrap() {
 
 export { app };
 
+/* On Vercel this file is the lambda entry, so the DB connection (and optional
+   first-run seeding) is kicked off eagerly; failures are logged and left to the
+   gate, which answers 503 honestly. */
+if (process.env.VERCEL) {
+  bootstrap().catch((err) => console.error("[api] bootstrap failed:", err.message));
+}
+
+export default app;
+
 const isDirectRun = process.argv[1]?.replace(/\\/g, "/").endsWith("src/index.js") || process.argv[1]?.replace(/\\/g, "/").endsWith("/index.js");
 
 if (isDirectRun) {
