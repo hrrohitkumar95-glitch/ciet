@@ -3,10 +3,13 @@ import {
   ArrowRight,
   Award,
   BadgeCheck,
+  Baby,
   CalendarCheck,
   CheckCircle2,
+  Eye,
   GraduationCap,
   HeartHandshake,
+  HeartPulse,
   Leaf,
   Quote,
   ShieldCheck,
@@ -58,8 +61,39 @@ const FB = {
   impact: [
     { value: 19, suffix: "+", label: "Years Experience" },
     { value: 15000, suffix: "+", label: "Programs Completed" },
-    { value: 13, suffix: "+", label: "Countries Served" },
+    { value: 5000, suffix: "+", label: "Diet Plans Delivered" },
+    { value: 3000, suffix: "+", label: "Plans for Special Kids" },
   ],
+  helpGroups: [
+    {
+      title: "Metabolic & Lifestyle",
+      items: [
+        "Diabetes reversal",
+        "PCOS",
+        "Thyroid",
+        "Weight management",
+        "Onco (cancer recovery)",
+        "Sports nutrition",
+        "Stress & mental wellbeing",
+      ],
+    },
+    {
+      title: "Life-stage & Family",
+      items: ["Pregnancy, GDM & lactation", "Autism & ADHD child nutrition", "Nutrigenomics"],
+    },
+  ],
+  timeline: [
+    { year: "2007", title: "Began Clinical Practice", text: "Started her journey in clinical nutrition and food science after completing M.Sc. with 2nd Rank at the University of Mysore." },
+    { year: "2012", title: "Ph.D. from CSIR-CFTRI", text: "Completed doctoral research in Food Science & Technology at India's premier food research institute." },
+    { year: "2015", title: "Founded GOLZ", text: "Launched GOLZ (Giggles of Livez) in Mysuru with a vision of joyful, personalized nutrition care." },
+    { year: "2019", title: "15,000+ Programs Milestone", text: "Crossed 15,000 nutrition & health programs completed for clients across India and beyond." },
+    { year: "2022", title: "Clients Across 13 Countries", text: "Expanded online consultations, serving clients worldwide with precision, DNA-personalized nutrition." },
+    { year: "2025", title: "National Recognition", text: "Honored as the Most Innovative Nutrition Counsellor of the Year." },
+  ],
+  research: "Nutrition research translated into everyday practice — from food science at CSIR-CFTRI to 15+ peer-reviewed papers and UGC-approved nutrition programs.",
+  reversal: "Nutrition plans designed to support the management of diabetes, thyroid, PCOS and other lifestyle conditions through evidence-based dietary intervention.",
+  innovation: "UGC-approved nutrition programs and 250+ invited talks shaping nutrition education across India.",
+
   trained: [
     { icon: "GraduationCap", title: "Professional Knowledge", text: "Evidence-informed nutrition practice and structured assessment." },
     { icon: "Users", title: "Practical Experience", text: "Individualised nutrition strategies designed around real-world needs." },
@@ -111,6 +145,8 @@ const ICONS = {
   HeartHandshake,
 };
 
+const HELP_ICONS = [Sparkles, HeartPulse, Baby];
+
 function Icon({ name, size = 22, className = "" }) {
   const Cmp = ICONS[name] || Sparkles;
   return <Cmp size={size} className={className} />;
@@ -152,6 +188,12 @@ export default function About() {
   const recognitionFootnote = a.recognitionFootnote?.trim() || FB.recognitionFootnote;
   const affiliations = (a.affiliations?.trim() || FB.affiliations).split("·").map((s) => s.trim()).filter(Boolean);
   const glozFocus = Array.isArray(a.glozFocus) && a.glozFocus.length ? a.glozFocus : FB.glozFocus;
+  const helpGroups = Array.isArray(a.helpGroups) && a.helpGroups.length ? a.helpGroups : FB.helpGroups;
+  const timeline = Array.isArray(a.timeline) && a.timeline.length ? a.timeline : FB.timeline;
+  const impactStats = Array.isArray(a.stats) && a.stats.length ? a.stats : FB.impact;
+  const researchLine = a.beyondClinic?.trim()
+    ? a.beyondClinic.split(".")[0].trim() + "."
+    : FB.research;
   const mission = a.mission?.trim() || FB.mission;
   const vision = a.vision?.trim() || FB.vision;
   const beyondClinic = a.beyondClinic?.trim() || FB.beyondClinic;
@@ -202,6 +244,9 @@ export default function About() {
               </h1>
               <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-[#DBE6D5]/85 sm:text-lg">
                 Personalised nutrition built around your body, your needs, your lifestyle, and your goals.
+              </p>
+              <p className="mt-5 font-heading text-lg font-semibold text-lime sm:text-xl">
+                {name} <span className="text-[#DBE6D5]/60">—</span> {designation}
               </p>
               <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
                 <Link to="/contact" className="btn-lime !px-8">
@@ -339,6 +384,44 @@ export default function About() {
         </div>
       </section>
 
+      {/* ============== WHAT SHE HELPS WITH ============== */}
+      <section className="bg-section-sage section-pad">
+        <div className="container-x">
+          <SectionHeading
+            eyebrow="What She Helps With"
+            title="A Practice Built Around You"
+            subtitle="From metabolic conditions to family nutrition, every area of her work follows the same principle — nutrition that is personal."
+          />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {helpGroups.map((group, gi) => {
+              const GroupIcon = HELP_ICONS[gi % HELP_ICONS.length];
+              return (
+                <Reveal key={group.title} delay={gi * 0.1}>
+                  <div className="card h-full p-8">
+                    <div className="mb-6 flex items-center gap-4">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                        {GroupIcon && <GroupIcon size={24} />}
+                      </span>
+                      <h3 className="font-heading text-[19px] font-semibold text-ink">{group.title}</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {(group.items || []).map((item) => (
+                        <span
+                          key={item}
+                          className="rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink/80 transition hover:border-primary hover:text-primary"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ============== CORE SPECIALISATION ============== */}
       <section className="relative overflow-hidden bg-primary section-pad">
         <div className="absolute -right-32 top-0 h-96 w-96 rounded-full bg-sage/10 blur-3xl" aria-hidden="true" />
@@ -385,10 +468,10 @@ export default function About() {
             title="A Track Record That Speaks For Itself"
             subtitle="Measurable results across years, programs and countries — grounded in verified practice, not promises."
           />
-          <Reveal className="grid grid-cols-1 gap-6 rounded-[24px] bg-primary p-8 shadow-lift sm:grid-cols-3 sm:gap-8 sm:p-12">
-            {FB.impact.map((s) => (
+          <Reveal className="grid grid-cols-2 gap-6 rounded-[24px] bg-primary p-8 shadow-lift sm:gap-8 sm:p-12 lg:grid-cols-4">
+            {impactStats.map((s) => (
               <div key={s.label} className="mx-auto w-full max-w-xs text-center">
-                <p className="font-heading text-5xl font-semibold text-lime sm:text-6xl">
+                <p className="font-heading text-4xl font-semibold text-lime sm:text-5xl">
                   <SafeStat value={s.value} suffix={s.suffix} />
                 </p>
                 <p className="mt-2 text-sm text-[#DBE6D5]/85">{s.label}</p>
@@ -404,7 +487,7 @@ export default function About() {
           <SectionHeading
             eyebrow="Training & Experience"
             title="Formally Trained. Practically Experienced"
-            subtitle="A balance of professional nutrition knowledge and hands-on experience with individuals and families."
+            subtitle="Nurturing Nutrition academically — a balance of professional nutrition knowledge and hands-on experience with individuals and families."
           />
           <div className="grid gap-6 md:grid-cols-3">
             {trained.map((t, i) => (
@@ -574,6 +657,81 @@ export default function About() {
               </ul>
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ============== RESEARCH · REVERSAL · INNOVATION ============== */}
+      <section className="section-pad">
+        <div className="container-x">
+          <SectionHeading
+            eyebrow="Research · Reversal · Innovation"
+            title="Science That Reaches The Plate"
+            subtitle="Three commitments that define how Dr. Sushma practises nutrition."
+          />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Reveal>
+              <div className="card flex h-full items-start gap-4 p-6">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <Sparkles size={22} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-heading text-[19px] font-semibold text-ink">Research</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink/70">{researchLine}</p>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="card flex h-full items-start gap-4 p-6">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <Target size={22} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-heading text-[19px] font-semibold text-ink">Reversal of disease</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink/70">{FB.reversal}</p>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal>
+              <div className="card flex h-full items-start gap-4 p-6">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                  <Award size={22} />
+                </span>
+                <div className="flex-1">
+                  <h3 className="font-heading text-[19px] font-semibold text-ink">Innovation</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink/70">{FB.innovation}</p>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ============== OUR JOURNEY ============== */}
+      <section className="bg-section-sage section-pad">
+        <div className="container-x">
+          <SectionHeading
+            eyebrow="Our Journey"
+            title="Precious Moments"
+            subtitle="Milestones from Dr. Sushma's practice — from clinical nutrition in 2007 to national recognition."
+          />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {timeline.map((t, i) => (
+              <Reveal key={t.year} delay={(i % 3) * 0.08}>
+                <div className="card flex h-full items-start gap-4 p-6">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
+                    <Eye size={22} />
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <h3 className="font-heading text-[19px] font-semibold text-ink">{t.year}</h3>
+                      <p className="font-heading text-[15px] font-semibold text-primary">{t.title}</p>
+                    </div>
+                    {t.text && <p className="mt-2 text-sm leading-relaxed text-ink/70">{t.text}</p>}
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 

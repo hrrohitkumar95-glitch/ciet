@@ -4,18 +4,39 @@ import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import {
   ArrowRight, CalendarCheck, Star, ArrowUpRight, BadgeCheck, Camera,
   Leaf, GraduationCap, Sparkles,
+  ShieldCheck, ClipboardList, MonitorSmartphone, FlaskConical,
 } from "lucide-react";
 import { useSite } from "../context/SiteContext";
-import api from "../api/client";
 import SEO from "../components/SEO";
 import Reveal from "../components/Reveal";
 import SectionHeading from "../components/SectionHeading";
 import BookingSection from "../components/BookingSection";
 import Lightbox, { PlayBadge } from "../components/Lightbox";
-import { toGalleryItem, withSectionLabels } from "../gallery/galleryApi";
+import { archiveItems, loadGallery, withSectionLabels } from "../gallery/galleryApi";
+import { FALLBACK_SERVICES, loadServices } from "../services/servicesApi";
 import { ICON_MAP } from "../utils/helpers";
 
 const TestimonialsSection = lazy(() => import("../components/TestimonialsSection"));
+
+const TRUST_ICONS = [ShieldCheck, ClipboardList, MonitorSmartphone, FlaskConical, Star];
+
+/* The trust strip must survive an API outage: it is the first thing a visitor
+   reads after the hero, so it renders from these defaults whenever the CMS
+   payload has no trustItems. */
+const FALLBACK_TRUST = [
+  { title: "Certified Nutrition Expert", text: "Ph.D. — CSIR-CFTRI, Mysuru" },
+  { title: "Personalized Plans", text: "Every plan built around your body & goals" },
+  { title: "Online & In-Clinic", text: "Consult from home or visit us in Mysuru" },
+  { title: "Science-Based Nutrition", text: "Every recommendation is evidence-backed" },
+  { title: "Continuous Support", text: "We stay with you until results stick" },
+];
+
+const FALLBACK_STATS = [
+  { value: 20, suffix: "+", label: "Years of science-backed nutrition care" },
+  { value: 15000, suffix: "+", label: "Nutrition & wellness programs completed" },
+  { value: 5000, suffix: "+", label: "Personalized diet plans delivered" },
+  { value: 3000, suffix: "+", label: "Specialized diet plans for children" },
+];
 
 function CountUp({ value, suffix = "" }) {
   const [display, setDisplay] = useState(0);
@@ -53,6 +74,14 @@ function CountUp({ value, suffix = "" }) {
   );
 }
 
+const FOUNDER_BIO = [
+  "Dr. Sushma Appaiah is the Founder of GOLZ (Giggles of Livez) and a distinguished nutrition scientist with 19 years of experience in clinical nutrition, corporate wellness, and health counselling.",
+  "She holds a Ph.D. in Food Science & Technology from CSIR-CFTRI, Mysore, and an M.Sc. in Food & Nutrition (2nd Rank) from the University of Mysore.",
+  "Over the years, she has helped clients across 13 countries achieve sustainable health through evidence-based nutrition and personalized care.",
+  "A recipient of the DST Women Scientist Award and recognized as the Most Innovative Nutrition Counsellor of the Year, Dr. Sushma is known for developing innovative food formulations for special children and translating scientific research into practical nutrition solutions.",
+  "Her areas of expertise include reversing diabetes, PCOD (recently termed as PMOS), thyroid disorders, pregnancy nutrition, sports nutrition, autism and special child nutrition, and nutrigenomics, empowering individuals and families to build healthier lives through personalized nutrition.",
+].join("\n\n");
+
 export default function Home() {
   const { site } = useSite();
   const h = site.homepage || {};
@@ -64,16 +93,63 @@ export default function Home() {
   );
   const [lightbox, setLightbox] = useState(null);
   const navigateLightbox = useCallback((index) => setLightbox((lb) => (lb ? { ...lb, index } : lb)), []);
+
+  /* The bundled archive is the primary source, so the grid paints immediately
+     and never depends on a second request; `loadGallery` then merges in the
+     CMS records. Both effects ignore late resolutions after unmount. */
+  const [galleryItems, setGalleryItems] = useState(() => archiveItems());
   const [gallerySections, setGallerySections] = useState([]);
+  const [services, setServices] = useState(FALLBACK_SERVICES);
 
   useEffect(() => {
-    api.get("/public/gallery/sections").then(({ data }) => setGallerySections(Array.isArray(data) ? data : []));
+    let alive = true;
+    loadGallery()
+      .then(({ items, sections }) => {
+        if (!alive) return;
+        setGalleryItems(items);
+        setGallerySections(sections);
+      })
+      .catch(() => {});
+    loadServices()
+      .then(({ services: items }) => {
+        if (alive) setServices(items);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const sectionByName = useMemo(() => Object.fromEntries(gallerySections.map((s) => [s.name, s])), [gallerySections]);
-  const withSection = useCallback(
-    (g, i) => withSectionLabels([toGalleryItem(g, i)], sectionByName[g.category] || { name: g.category, title: g.category })[0],
-    [sectionByName]
+
+  /* The home preview is a fixed 12-tile grid — 4 across — so the two events
+     the client asked to keep are pinned first and the rest of the archive fills
+     the remaining slots. Everything else lives behind "View Gallery". */
+  const homeGallery = useMemo(() => {
+    const total = 12;
+    const picked = [];
+    const used = new Set();
+
+    const take = (item) => {
+      if (item && !used.has(item.id) && picked.length < total) {
+        picked.push(item);
+        used.add(item.id);
+      }
+    };
+
+    for (const event of ["IDACon Conference 19 Dec 2019", "Lucknow NCED 2018"]) {
+      galleryItems.filter((g) => g.eventName === event).slice(0, 2).forEach(take);
+    }
+    galleryItems.forEach(take);
+
+    return picked;
+  }, [galleryItems]);
+
+  /* Already-normalised items go straight to the lightbox; the CMS half just
+     borrows its section title when a record has no event name of its own. */
+  const lightboxItems = useMemo(
+    () => homeGallery.map((g) => withSectionLabels([g], sectionByName[g.section])[0]),
+    [homeGallery, sectionByName]
   );
 
   return (
@@ -173,11 +249,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ================= TRUST ================= */}
+      <section className="container-x relative z-20 -mt-14">
+        <Reveal className="card grid grid-cols-2 gap-6 rounded-3xl p-8 shadow-lift sm:grid-cols-3 lg:grid-cols-5">
+          {(h.trustItems?.length ? h.trustItems : FALLBACK_TRUST).map((t, i) => {
+            const TrustIcon = TRUST_ICONS[i % TRUST_ICONS.length];
+            return (
+              <motion.div key={t.title} whileHover={{ y: -6 }} className="group flex flex-col items-center gap-3 text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
+                  <TrustIcon size={26} />
+                </span>
+                <div>
+                  <p className="font-heading text-sm font-semibold text-charcoal">✓ {t.title}</p>
+                  <p className="mt-0.5 text-xs text-charcoal/50">{t.text}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </Reveal>
+      </section>
+
       {/* ================= STATISTICS ================= */}
       <section className="bg-sageLight section-pad">
         <div className="container-x">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-            {(h.stats || []).map((s, i) => (
+            {(h.stats?.length ? h.stats : FALLBACK_STATS).map((s, i) => (
               <Reveal key={s.label} delay={i * 0.08}>
                 <div className="group flex min-h-[170px] flex-col items-center justify-center rounded-[24px] border border-ink/5 bg-white p-6 text-center shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lift">
                   <p className="font-heading text-4xl font-bold tracking-tight text-primary sm:text-5xl">
@@ -209,7 +305,7 @@ export default function Home() {
             </p>
 
             <div className="mx-auto mt-6 max-w-[620px] space-y-4 text-[15px] leading-[1.85] text-[#DBE6D5]/90 lg:mx-0">
-              {(h.aboutPreview?.text || "Dr. Sushma Appaiah is the Founder of GOLZ (Giggles of Livez) and a distinguished nutrition scientist with 19 years of experience in clinical nutrition, corporate wellness, and health counselling.").split(/\n{2,}/).map((para) => (
+              {(h.aboutPreview?.text || FOUNDER_BIO).split(/\n{2,}/).map((para) => (
                 <p key={para.slice(0, 24)}>{para}</p>
               ))}
             </div>
@@ -251,16 +347,17 @@ export default function Home() {
               <p className="flex items-center gap-2 text-sm font-bold"><Sparkles size={15} /> GOLZ · Founder</p>
             </div>
             <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 6 }} className="relative rounded-[180px_180px_22px_22px] border border-white/15 bg-white/5 p-6 sm:p-8">
-              {h.aboutPreview?.image ? (
-                <img
-                  src={h.aboutPreview.image}
-                  alt="Dr. Sushma Appaiah"
-                  className="aspect-[3/4] w-full rounded-[150px_150px_16px_16px] object-cover object-top"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="aspect-[3/4] w-full rounded-[150px_150px_16px_16px] bg-white/10" />
-              )}
+              <img
+                src={h.aboutPreview?.image || "/doctor-portrait.png"}
+                onError={(e) => {
+                  if (e.currentTarget.src.indexOf("/doctor-portrait.png") === -1) {
+                    e.currentTarget.src = "/doctor-portrait.png";
+                  }
+                }}
+                alt="Dr. Sushma Appaiah"
+                className="aspect-[3/4] w-full rounded-[150px_150px_16px_16px] object-cover object-top"
+                loading="lazy"
+              />
               <div className="mt-6 flex items-center justify-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-lime/15 text-lime">
                   <GraduationCap size={22} />
@@ -291,7 +388,7 @@ export default function Home() {
           </Reveal>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {(site.services || []).map((s, i) => {
+            {services.map((s, i) => {
               const Icon = ICON_MAP.get(s.icon) || ICON_MAP.get("Sparkles");
               return (
                 <Reveal key={s._id} delay={(i % 3) * 0.08} className="h-full">
@@ -375,25 +472,32 @@ export default function Home() {
             title="Moments From Our Journey"
             subtitle="Recipes, workshops, events and real client transformations."
           />
-          <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 lg:columns-4">
-            {site.gallery.map((g, i) => (
-              <Reveal key={g._id} delay={(i % 4) * 0.06} className="mb-3 break-inside-avoid sm:mb-4">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+            {homeGallery.map((g, i) => (
+              <Reveal key={g.id} delay={(i % 4) * 0.06} className="h-full">
                 <button
-                  onClick={() => setLightbox({ items: site.gallery.map(withSection), index: i })}
-                  className="group relative block w-full cursor-pointer overflow-hidden rounded-2xl text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+                  onClick={() => setLightbox({ items: lightboxItems, index: i })}
+                  className="group relative block h-full w-full cursor-pointer overflow-hidden rounded-2xl text-left focus:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
                   aria-label={`Open ${g.caption || g.alt || "gallery item"}`}
                 >
                   {g.type === "video" ? (
                     <>
-                      <video src={g.url} muted className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      <video src={g.image} muted className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                       <PlayBadge />
                     </>
                   ) : (
-                    <img src={g.url} alt={g.alt || g.caption} loading="lazy" className="h-auto w-full object-contain transition-transform duration-500 group-hover:scale-110" />
+                    <img
+                      src={g.thumb || g.image}
+                      srcSet={g.srcSet || undefined}
+                      sizes="25vw"
+                      alt={g.alt || g.caption}
+                      loading="lazy"
+                      className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
                   )}
                   <span className="absolute inset-0 bg-gradient-to-t from-charcoal/70 to-transparent opacity-0 transition group-hover:opacity-100" />
                   {g.caption && (
-                    <span className="absolute bottom-3 left-3 right-3 translate-y-2 text-xs font-medium text-white opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
+                    <span className="absolute bottom-3 left-3 right-3 translate-y-2 truncate text-xs font-medium text-white opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
                       {g.caption}
                     </span>
                   )}

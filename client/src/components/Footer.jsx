@@ -12,6 +12,12 @@ export default function Footer() {
   const g = site.general || {};
   const year = new Date().getFullYear();
 
+  /* Contact details are the one thing a visitor must never lose, so they fall
+     back to the published clinic numbers when the settings payload is absent. */
+  const phone = g.phone || "+91 934-267-4406";
+  const email = g.email || "nutrigolz@gmail.com";
+  const whatsapp = g.whatsapp || "919342674406";
+
   const socials = Object.entries(g.socials || {})
     .filter(([, url]) => url)
     .map(([key, url]) => ({ key, url, Icon: SOCIAL_ICONS[key] }))
@@ -61,9 +67,9 @@ export default function Footer() {
           <h3 className="mb-5 font-heading text-base font-semibold text-[#EEF3EA]">Contact & Hours</h3>
           <ul className="space-y-4 text-sm">
             <li className="flex gap-3"><MapPin size={18} className="mt-0.5 shrink-0 text-lime" /><span>{g.address || "@Kshema Healthcare, #338, Bogadi Main Road, Bogadi, Mysuru 570026"}</span></li>
-            <li className="flex gap-3"><Phone size={18} className="shrink-0 text-lime" /><a href={`tel:${g.phone}`} className="transition hover:text-lime">{g.phone}</a></li>
-            <li className="flex gap-3"><Mail size={18} className="shrink-0 text-lime" /><a href={`mailto:${g.email}`} className="transition hover:text-lime">{g.email}</a></li>
-            <li className="flex gap-3"><MessageCircle size={18} className="shrink-0 text-lime" /><a href={`https://wa.me/${g.whatsapp}`} target="_blank" rel="noopener noreferrer" className="transition hover:text-lime">WhatsApp Us</a></li>
+            <li className="flex gap-3"><Phone size={18} className="shrink-0 text-lime" /><a href={`tel:${phone.replace(/\s/g, "")}`} className="transition hover:text-lime">{phone}</a></li>
+            <li className="flex gap-3"><Mail size={18} className="shrink-0 text-lime" /><a href={`mailto:${email}`} className="transition hover:text-lime">{email}</a></li>
+            <li className="flex gap-3"><MessageCircle size={18} className="shrink-0 text-lime" /><a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="transition hover:text-lime">WhatsApp Us</a></li>
           </ul>
           <div className="mt-5 rounded-[18px] border border-white/15 bg-white/5 p-4 text-sm">
             <p className="mb-2 flex items-center gap-2 font-heading font-semibold text-[#EEF3EA]"><Clock size={15} className="text-lime" /> Working Hours</p>
