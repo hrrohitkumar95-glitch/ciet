@@ -85,7 +85,7 @@ export default function ServiceDetail() {
           "@type": "MedicalProcedure",
           name: service.title,
           description: service.shortDesc,
-          provider: { "@type": "MedicalClinic", name: site.general?.clinicName || "GLOZ (Giggles of Livez)" },
+          provider: { "@type": "MedicalClinic", name: site.general?.clinicName || "GOLZ (Giggles of Livez)" },
         }}
       />
 

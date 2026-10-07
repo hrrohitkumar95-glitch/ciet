@@ -55,7 +55,7 @@ const FB = {
   ],
   specialUses: 5000,
   specialText:
-    "Specialised child nutrition is at the heart of Dr. Sushma's work. GLOZ provides personalised nutrition support for children with special nutritional requirements and their families — building gentle, practical plans that work with a child's sensitivities, not against them.",
+    "Specialised child nutrition is at the heart of Dr. Sushma's work. GOLZ provides personalised nutrition support for children with special nutritional requirements and their families — building gentle, practical plans that work with a child's sensitivities, not against them.",
   specialCredibility: "Certified in Autism & ADHD Nutrition Therapy, Level 1 & 2 — Cambridge International Institute, UK",
   specialCta: "Book a consultation for your child",
   impact: [
@@ -212,12 +212,12 @@ export default function About() {
   const specialUses = FB.specialUses;
 
   const seoDescription =
-    "Learn about GLOZ (Giggles of Livez), Dr. Sushma Appaiah, and our personalised approach to nutrition for individuals, families and children.";
+    "Learn about GOLZ (Giggles of Livez), Dr. Sushma Appaiah, and our personalised approach to nutrition for individuals, families and children.";
 
   return (
     <>
       <SEO
-        title="About GLOZ"
+        title="About GOLZ"
         description={seoDescription}
         image={image}
         jsonLd={{
@@ -237,7 +237,7 @@ export default function About() {
           <div className="mx-auto max-w-3xl py-6 text-center sm:py-10">
             <Reveal>
               <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-lime/40 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-lime">
-                About GLOZ
+                About GOLZ
               </span>
               <h1 className="font-heading text-4xl font-semibold leading-tight text-[#EEF3EA] sm:text-5xl lg:text-[60px] lg:leading-[1.05]">
                 Nutrition That Understands You
@@ -285,7 +285,7 @@ export default function About() {
               />
             ) : (
               <div className="relative z-10 flex h-[380px] w-full items-center justify-center rounded-[180px_180px_24px_24px] bg-sage sm:h-[460px]">
-                <span className="text-center font-heading text-2xl font-semibold text-primary">GLOZ</span>
+                <span className="text-center font-heading text-2xl font-semibold text-primary">GOLZ</span>
               </div>
             )}
             <div className="glass absolute -bottom-7 left-6 z-20 rounded-[18px] px-6 py-4 shadow-card">
@@ -559,23 +559,23 @@ export default function About() {
         </div>
       </section>
 
-      {/* ============== ABOUT GLOZ ============== */}
+      {/* ============== ABOUT GOLZ ============== */}
       <section className="bg-cream section-pad">
         <div className="container-x grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <Reveal>
             <span className="mb-3 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-              About GLOZ
+              About GOLZ
             </span>
             <h2 className="font-heading text-3xl font-semibold leading-tight text-ink sm:text-4xl lg:text-[44px] lg:leading-[1.1]">
-              GLOZ <span className="text-primary">(Giggles of Livez)</span>
+              GOLZ <span className="text-primary">(Giggles of Livez)</span>
             </h2>
             <p className="mt-6 text-base leading-relaxed text-ink/80">
-              GLOZ (Giggles of Livez) is a personalised nutrition practice focused on helping
+              GOLZ (Giggles of Livez) is a personalised nutrition practice focused on helping
               individuals and families build healthier, more sustainable relationships with food
               and wellbeing.
             </p>
             <p className="mt-4 text-base leading-relaxed text-ink/75">
-              Where the doctor represents the expertise and philosophy behind the care, GLOZ is the
+              Where the doctor represents the expertise and philosophy behind the care, GOLZ is the
               practice itself — the way that care is delivered, the approach it takes, and the
               impact it creates for the people and families it serves.
             </p>
@@ -586,7 +586,7 @@ export default function About() {
                 <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-primary/10 text-primary">
                   <Leaf size={22} />
                 </span>
-                What GLOZ Focuses On
+                What GOLZ Focuses On
               </h3>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {glozFocus.map((item) => (
