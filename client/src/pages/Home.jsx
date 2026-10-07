@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import {
@@ -11,7 +11,6 @@ import Reveal from "../components/Reveal";
 import SectionHeading from "../components/SectionHeading";
 import BookingSection from "../components/BookingSection";
 import Lightbox, { PlayBadge } from "../components/Lightbox";
-import { archiveItems, loadGallery, withSectionLabels } from "../gallery/galleryApi";
 import { FALLBACK_SERVICES, loadServices } from "../services/servicesApi";
 import { ICON_MAP } from "../utils/helpers";
 import TestimonialsSection from "../components/TestimonialsSection";
@@ -116,7 +115,7 @@ const LOCAL_HOME_GALLERY = Array.from({ length: 12 }, (_, i) => {
     section: "Home Gallery",
     sectionId: "",
     year: "",
-    eventName: "",
+    eventName: "Our journey - Precious moments",
     caption: "",
     hasOwnCaption: false,
     alt: "GOLZ nutrition — precious moment",
@@ -138,22 +137,11 @@ export default function Home() {
   const [lightbox, setLightbox] = useState(null);
   const navigateLightbox = useCallback((index) => setLightbox((lb) => (lb ? { ...lb, index } : lb)), []);
 
-  /* The bundled archive is the primary source, so the grid paints immediately
-     and never depends on a second request; `loadGallery` then merges in the
-     CMS records. Both effects ignore late resolutions after unmount. */
-  const [galleryItems, setGalleryItems] = useState(() => archiveItems());
-  const [gallerySections, setGallerySections] = useState([]);
   const [services, setServices] = useState(FALLBACK_SERVICES);
 
+  /* Late resolutions are ignored after unmount. */
   useEffect(() => {
     let alive = true;
-    loadGallery()
-      .then(({ items, sections }) => {
-        if (!alive) return;
-        setGalleryItems(items);
-        setGallerySections(sections);
-      })
-      .catch(() => {});
     loadServices()
       .then(({ services: items }) => {
         if (alive) setServices(items);
@@ -164,39 +152,10 @@ export default function Home() {
     };
   }, []);
 
-  const sectionByName = useMemo(() => Object.fromEntries(gallerySections.map((s) => [s.name, s])), [gallerySections]);
-
-  /* The home preview is a fixed 4-across grid — the client's own home-gallery
-     photos come first, the two events they asked to keep are pinned after
-     them, and the rest of the archive fills the remaining slots. Everything
-     else lives behind "View Gallery". */
-  const homeGallery = useMemo(() => {
-    const total = 24;
-    const picked = [];
-    const used = new Set();
-
-    const take = (item) => {
-      if (item && !used.has(item.id) && picked.length < total) {
-        picked.push(item);
-        used.add(item.id);
-      }
-    };
-
-    LOCAL_HOME_GALLERY.forEach(take);
-    for (const event of ["IDACon Conference 19 Dec 2019", "Lucknow NCED 2018"]) {
-      galleryItems.filter((g) => g.eventName === event).slice(0, 2).forEach(take);
-    }
-    galleryItems.forEach(take);
-
-    return picked;
-  }, [galleryItems]);
-
-  /* Already-normalised items go straight to the lightbox; the CMS half just
-     borrows its section title when a record has no event name of its own. */
-  const lightboxItems = useMemo(
-    () => homeGallery.map((g) => withSectionLabels([g], sectionByName[g.section])[0]),
-    [homeGallery, sectionByName]
-  );
+  /* The home preview shows only the client's own home-gallery photos; the full
+     archive lives behind "View Gallery". */
+  const homeGallery = LOCAL_HOME_GALLERY;
+  const lightboxItems = homeGallery;
 
   return (
     <>
