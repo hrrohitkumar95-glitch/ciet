@@ -103,6 +103,28 @@ const FOUNDER_BIO = [
   "Her areas of expertise include reversing diabetes, PCOD (recently termed as PMOS), thyroid disorders, pregnancy nutrition, sports nutrition, autism and special child nutrition, and nutrigenomics, empowering individuals and families to build healthier lives through personalized nutrition.",
 ].join("\n\n");
 
+/* The client's own photo drop in client/public/home-gallery ships with the
+   bundle and always leads the home grid; the pinned events and the rest of the
+   archive fill the remaining slots behind it. */
+const LOCAL_HOME_GALLERY = Array.from({ length: 12 }, (_, i) => {
+  const n = String(i + 1).padStart(2, "0");
+  return {
+    id: `home-gallery-${n}`,
+    image: `/home-gallery/home-${n}.jpg`,
+    thumb: `/home-gallery/home-${n}.jpg`,
+    type: "image",
+    section: "Home Gallery",
+    sectionId: "",
+    year: "",
+    eventName: "",
+    caption: "",
+    hasOwnCaption: false,
+    alt: "GOLZ nutrition — precious moment",
+    order: i,
+    origin: "home",
+  };
+});
+
 export default function Home() {
   const { site } = useSite();
   const h = site.homepage || {};
@@ -144,11 +166,12 @@ export default function Home() {
 
   const sectionByName = useMemo(() => Object.fromEntries(gallerySections.map((s) => [s.name, s])), [gallerySections]);
 
-  /* The home preview is a fixed 12-tile grid — 4 across — so the two events
-     the client asked to keep are pinned first and the rest of the archive fills
-     the remaining slots. Everything else lives behind "View Gallery". */
+  /* The home preview is a fixed 4-across grid — the client's own home-gallery
+     photos come first, the two events they asked to keep are pinned after
+     them, and the rest of the archive fills the remaining slots. Everything
+     else lives behind "View Gallery". */
   const homeGallery = useMemo(() => {
-    const total = 12;
+    const total = 24;
     const picked = [];
     const used = new Set();
 
@@ -159,6 +182,7 @@ export default function Home() {
       }
     };
 
+    LOCAL_HOME_GALLERY.forEach(take);
     for (const event of ["IDACon Conference 19 Dec 2019", "Lucknow NCED 2018"]) {
       galleryItems.filter((g) => g.eventName === event).slice(0, 2).forEach(take);
     }
