@@ -1,0 +1,29 @@
+# GoDaddy / Apache shared hosting — SPA fallback for the React build.
+# Vercel ignores this file; it only matters when the build is served by Apache.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Let the API and uploaded files pass through to their own handlers.
+  RewriteCond %{REQUEST_URI} !^/(api|uploads)/ [NC]
+  RewriteCond %{REQUEST_URI} !^/robots\.txt$ [NC]
+  RewriteCond %{REQUEST_URI} !^/sitemap\.xml$ [NC]
+
+  # Serve the real file/directory if one exists, otherwise hand the route to
+  # index.html so react-router can render it.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Fingerprinted build assets never change — cache them hard.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+</IfModule>
