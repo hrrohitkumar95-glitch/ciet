@@ -132,7 +132,7 @@ export default function Home() {
   const { scrollY } = useScroll();
   const parallaxY = useTransform(scrollY, [0, 600], [0, -24]);
   const [heroSrc, setHeroSrc] = useState(
-    typeof h.heroPortrait === "string" && h.heroPortrait.trim() ? h.heroPortrait : "/hero-banner.png"
+    typeof h.heroPortrait === "string" && h.heroPortrait.trim() ? h.heroPortrait : "/hero-banner.webp"
   );
   const [lightbox, setLightbox] = useState(null);
   const navigateLightbox = useCallback((index) => setLightbox((lb) => (lb ? { ...lb, index } : lb)), []);
