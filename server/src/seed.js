@@ -507,7 +507,7 @@ export async function seedIfEmpty({ force = RESET } = {}) {
   await User.create({
     name: "Admin",
     email: "nutrigolz@gmail.com",
-    password: await bcrypt.hash("Admin1234", 10),
+    password: await bcrypt.hash("Newwebgolz@2026", 10),
     role: "admin",
   });
 

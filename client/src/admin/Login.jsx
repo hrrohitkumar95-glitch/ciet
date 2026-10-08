@@ -45,7 +45,7 @@ export default function Login() {
                 <label className="label">Email</label>
                 <div className="relative">
                   <Mail size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/35" />
-                  <input type="email" className="input !pl-11" placeholder="admin@nutrix.com" {...register("email", { required: "Email is required" })} />
+                  <input type="email" className="input !pl-11" placeholder="email@example.com" {...register("email", { required: "Email is required" })} />
                 </div>
                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
               </div>
@@ -62,9 +62,6 @@ export default function Login() {
                 {isSubmitting ? <ButtonSpinner /> : "Sign In"}
               </button>
             </form>
-            <p className="mt-6 text-center text-xs text-charcoal/45">
-              Demo credentials: <code className="rounded bg-gray-100 px-1.5 py-0.5">admin@nutrix.com</code> / <code className="rounded bg-gray-100 px-1.5 py-0.5">Admin@123</code>
-            </p>
           </div>
         </motion.div>
       </div>
